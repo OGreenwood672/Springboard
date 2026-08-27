@@ -1,0 +1,16 @@
+{
+  "name": "springboard-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter @springboard/web dev",
+    "build:web": "pnpm --filter @springboard/web build",
+    "test:web": "pnpm --filter @springboard/web test",
+    "build:types": "pnpm --filter @springboard/shared-types build",
+    "test:api": "cd services/api && .\\.venv\\Scripts\\pytest.exe"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5"
+  }
+}
