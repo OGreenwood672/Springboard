@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import { Navbar } from "./components/common/Navbar";
@@ -19,6 +19,7 @@ import { OpportunityBrowsePage } from "./pages/youth/OpportunityBrowsePage";
 import { OpportunityDetailPage } from "./pages/youth/OpportunityDetailPage";
 import { YouthApplicationsPage } from "./pages/youth/YouthApplicationsPage";
 import { YouthMatchesPage } from "./pages/youth/YouthMatchesPage";
+import { YouthKnowledgePage } from "./pages/youth/YouthKnowledgePage";
 
 // Business Pages
 import { BusinessAssistantPage } from "./pages/business/BusinessAssistantPage";
@@ -28,15 +29,15 @@ import { BusinessOpportunitiesPage } from "./pages/business/BusinessOpportunitie
 import { EditOpportunityPage } from "./pages/business/EditOpportunityPage";
 import { OpportunityApplicantsPage } from "./pages/business/OpportunityApplicantsPage";
 
-export const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const location = useLocation();
+  const isKnowledgeWorkspace = location.pathname === "/knowledge";
+
   return (
-    <BrowserRouter>
-      <ToastProvider>
-        <AuthProvider>
-          <div className="flex flex-col min-h-screen">
-            <Navbar />
-            <main className="flex-1">
-              <Routes>
+    <div className="flex min-h-screen flex-col">
+      <Navbar />
+      <main className="min-h-0 flex-1">
+        <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/sign-in" element={<SignInPage />} />
@@ -72,6 +73,14 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute allowedRoles={["youth"]}>
                       <YouthProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/knowledge"
+                  element={
+                    <ProtectedRoute allowedRoles={["youth"]}>
+                      <YouthKnowledgePage />
                     </ProtectedRoute>
                   }
                 />
@@ -152,10 +161,19 @@ export const App: React.FC = () => {
 
                 {/* Catch all fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
+        </Routes>
+      </main>
+      {!isKnowledgeWorkspace && <Footer />}
+    </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <BrowserRouter>
+      <ToastProvider>
+        <AuthProvider>
+          <AppContent />
         </AuthProvider>
       </ToastProvider>
     </BrowserRouter>

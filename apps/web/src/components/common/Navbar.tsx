@@ -15,6 +15,7 @@ import {
   Layers,
   Bot,
   Users,
+  Network,
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
@@ -72,6 +73,18 @@ export const Navbar: React.FC = () => {
                   >
                     <Bot className="w-4 h-4 text-emerald-600" />
                     <span>Job Coach AI</span>
+                  </Link>
+
+                  <Link
+                    to="/knowledge"
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive("/knowledge")
+                        ? "bg-emerald-50 text-emerald-800 font-semibold"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Network className="w-4 h-4 text-teal-600" />
+                    <span>Knowledge Map</span>
                   </Link>
 
                   <Link
@@ -230,6 +243,14 @@ export const Navbar: React.FC = () => {
               >
                 <Bot className="w-5 h-5 text-emerald-600" />
                 Job Coach AI
+              </Link>
+              <Link
+                to="/knowledge"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-base font-medium text-slate-800 hover:bg-slate-100"
+              >
+                <Network className="w-5 h-5 text-teal-600" />
+                My Knowledge Map
               </Link>
               <Link
                 to="/matches"

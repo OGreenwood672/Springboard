@@ -56,6 +56,57 @@ export interface YouthProfile {
   updated_at: string;
 }
 
+export type KnowledgeNodeStatus = "current" | "frontier";
+
+export interface KnowledgeGraphNode {
+  id: string;
+  label: string;
+  status: KnowledgeNodeStatus;
+  sector: string;
+  demand: number;
+  opportunity_count: number;
+  reason: string;
+}
+
+export interface KnowledgeGraphEdge {
+  source: string;
+  target: string;
+  relationship: "related" | "used_together";
+}
+
+export interface SectorRecommendation {
+  name: string;
+  fit_score: number;
+  matching_skills: string[];
+  frontier_skills: string[];
+  opportunity_count: number;
+}
+
+export interface KnowledgeOpportunity {
+  id: string;
+  title: string;
+  business_name?: string | null;
+  sector: string;
+  workplace_type: string;
+  location_name?: string | null;
+  fit_score: number;
+  matched_skills: string[];
+  missing_skills: string[];
+}
+
+export interface KnowledgeGraph {
+  nodes: KnowledgeGraphNode[];
+  edges: KnowledgeGraphEdge[];
+  sectors: SectorRecommendation[];
+  opportunities: KnowledgeOpportunity[];
+  stats: {
+    current_skills: number;
+    frontier_skills: number;
+    sectors_in_reach: number;
+    roles_in_reach: number;
+  };
+}
+
 export interface Business {
   id: string;
   user_id: string;

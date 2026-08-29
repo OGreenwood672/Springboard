@@ -10,10 +10,27 @@ from app.schemas.youth_profile import (
     YouthProfileUpdate,
     YouthProfileCreate,
 )
+from app.schemas.knowledge_graph import KnowledgeGraphOut
+from app.services.knowledge_graph_service import build_knowledge_graph
 from app.core.dependencies import require_youth_user
 from app.core.geo import geocode_uk_postcode, create_point_geom
 
 router = APIRouter(prefix="/profiles", tags=["Youth Profiles"])
+
+
+@router.get("/me/knowledge-graph", response_model=KnowledgeGraphOut)
+def get_my_knowledge_graph(
+    current_user: User = Depends(require_youth_user),
+    db: Session = Depends(get_db),
+):
+    """Build an explainable skills graph from the profile and published roles."""
+    profile = db.query(YouthProfile).filter(YouthProfile.user_id == current_user.id).first()
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Youth profile has not been created yet.",
+        )
+    return build_knowledge_graph(db, profile)
 
 
 @router.get("/me", response_model=YouthProfileOut)
@@ -116,4 +133,3 @@ def update_or_create_my_youth_profile(
     db.commit()
     db.refresh(profile)
     return profile
-
