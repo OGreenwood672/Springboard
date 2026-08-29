@@ -72,9 +72,11 @@ htmlcov/
 # Node.js, Frontend & Build Tooling (React / Vite / TypeScript / pnpm)
 # ------------------------------------------------------------------------------
 node_modules/
+.pnpm-store/
 dist/
 dist-ssr/
 *.local
+.npmrc
 
 # Logs
 logs/
