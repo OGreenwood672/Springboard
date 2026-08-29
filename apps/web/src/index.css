@@ -12,3 +12,46 @@
 .uk-focus-ring:focus-visible {
   @apply outline-none ring-2 ring-emerald-600 ring-offset-2;
 }
+
+.react-flow__node-skill {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  width: 174px;
+  box-shadow: none;
+}
+
+.react-flow__node-skill:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 4px;
+}
+
+.skill-graph-node--selected {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.22), 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.skill-graph-controls {
+  margin: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+}
+
+.skill-graph-controls button {
+  width: 34px;
+  height: 34px;
+  border-bottom: 0;
+  border-right: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.skill-graph-controls button:last-child {
+  border-right: 0;
+}
+
+.react-flow__attribution {
+  font-size: 9px;
+  opacity: 0.55;
+}

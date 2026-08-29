@@ -19,7 +19,12 @@ import { OpportunityBrowsePage } from "./pages/youth/OpportunityBrowsePage";
 import { OpportunityDetailPage } from "./pages/youth/OpportunityDetailPage";
 import { YouthApplicationsPage } from "./pages/youth/YouthApplicationsPage";
 import { YouthMatchesPage } from "./pages/youth/YouthMatchesPage";
-import { YouthKnowledgePage } from "./pages/youth/YouthKnowledgePage";
+
+const YouthKnowledgePage = React.lazy(() =>
+  import("./pages/youth/YouthKnowledgePage").then((module) => ({
+    default: module.YouthKnowledgePage,
+  })),
+);
 
 // Business Pages
 import { BusinessAssistantPage } from "./pages/business/BusinessAssistantPage";
@@ -80,7 +85,15 @@ const AppContent: React.FC = () => {
                   path="/knowledge"
                   element={
                     <ProtectedRoute allowedRoles={["youth"]}>
-                      <YouthKnowledgePage />
+                      <React.Suspense
+                        fallback={
+                          <div className="flex h-[calc(100dvh-4rem)] items-center justify-center bg-slate-50" role="status" aria-label="Loading knowledge map">
+                            <span className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-emerald-600" />
+                          </div>
+                        }
+                      >
+                        <YouthKnowledgePage />
+                      </React.Suspense>
                     </ProtectedRoute>
                   }
                 />

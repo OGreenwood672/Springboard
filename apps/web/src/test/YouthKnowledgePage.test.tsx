@@ -9,6 +9,7 @@ import { YouthKnowledgePage } from "../pages/youth/YouthKnowledgePage";
 vi.mock("../api/profiles", () => ({
   profilesApi: {
     getMyKnowledgeGraph: vi.fn(),
+    updateMyProfile: vi.fn(),
   },
 }));
 
@@ -68,6 +69,7 @@ describe("YouthKnowledgePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(profilesApi.getMyKnowledgeGraph).mockResolvedValue(graph);
+    vi.mocked(profilesApi.updateMyProfile).mockResolvedValue({} as any);
   });
 
   it("shows the frontier skill and its connected role", async () => {
@@ -78,12 +80,45 @@ describe("YouthKnowledgePage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Your knowledge frontier" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Knowledge frontier" })).toBeInTheDocument();
     });
 
     expect(screen.getAllByText("HTML/CSS").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("tab", { name: "Roles" }));
     expect(screen.getByText("Junior Web Developer")).toBeInTheDocument();
     expect(screen.getByText("Grow: HTML/CSS")).toBeInTheDocument();
+  });
+
+  it("promotes a frontier skill and refreshes the graph in place", async () => {
+    const updatedGraph: KnowledgeGraph = {
+      ...graph,
+      nodes: graph.nodes.map((node) =>
+        node.id === "html-css" ? { ...node, status: "current" as const } : node,
+      ),
+      stats: { ...graph.stats, current_skills: 2, frontier_skills: 0 },
+    };
+    vi.mocked(profilesApi.getMyKnowledgeGraph)
+      .mockResolvedValueOnce(graph)
+      .mockResolvedValueOnce(updatedGraph);
+
+    render(
+      <MemoryRouter>
+        <YouthKnowledgePage />
+      </MemoryRouter>,
+    );
+
+    const addButton = await screen.findByRole("button", {
+      name: "Add HTML/CSS to my skills",
+    });
+    fireEvent.click(addButton);
+
+    await waitFor(() => {
+      expect(profilesApi.updateMyProfile).toHaveBeenCalledWith({
+        skills: ["Python", "HTML/CSS"],
+      });
+      expect(
+        screen.queryByRole("button", { name: "Add HTML/CSS to my skills" }),
+      ).not.toBeInTheDocument();
+    });
   });
 });

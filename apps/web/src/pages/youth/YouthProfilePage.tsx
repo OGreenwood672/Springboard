@@ -4,6 +4,7 @@ import { useToast } from "../../context/ToastContext";
 import { profilesApi } from "../../api/profiles";
 import { AICoachModal } from "../../components/youth/AICoachModal";
 import { LoadingSpinner } from "../../components/common/LoadingSpinner";
+import { COMMON_INTERESTS, COMMON_SKILLS } from "../../data/profileOptions";
 import {
   AICoachExtractedProfile,
   OpportunityType,
@@ -21,40 +22,6 @@ import {
   CheckCircle2,
   Calendar,
 } from "lucide-react";
-
-const COMMON_SKILLS = [
-  "Python",
-  "JavaScript",
-  "TypeScript",
-  "HTML/CSS",
-  "Customer Service",
-  "Communication",
-  "Teamwork",
-  "Problem Solving",
-  "Social Media",
-  "Retail",
-  "Cash Handling",
-  "Event Planning",
-  "First Aid",
-  "Graphic Design",
-  "Writing",
-  "Video Editing",
-  "Administration",
-  "Leadership",
-];
-
-const COMMON_INTERESTS = [
-  "Technology",
-  "Retail",
-  "Charity",
-  "Arts & Culture",
-  "Environment",
-  "Hospitality",
-  "Healthcare",
-  "Sports & Fitness",
-  "Education",
-  "Marketing",
-];
 
 const DAYS = [
   "Monday",
@@ -79,7 +46,9 @@ export const YouthProfilePage: React.FC = () => {
   const [postcode, setPostcode] = useState("");
   const [maxTravelKm, setMaxTravelKm] = useState(15);
   const [skills, setSkills] = useState<string[]>([]);
+  const [newSkill, setNewSkill] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
+  const [newInterest, setNewInterest] = useState("");
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [hoursPerWeek, setHoursPerWeek] = useState(8);
   const [educationStage, setEducationStage] = useState("sixth_form");
@@ -114,12 +83,36 @@ export const YouthProfilePage: React.FC = () => {
     );
   };
 
+  const addCustomSkill = () => {
+    const trimmed = newSkill.trim();
+    if (!trimmed) return;
+    setSkills((currentSkills) =>
+      currentSkills.some((skill) => skill.toLowerCase() === trimmed.toLowerCase())
+        ? currentSkills
+        : [...currentSkills, trimmed],
+    );
+    setNewSkill("");
+  };
+
   const toggleInterest = (interest: string) => {
     setInterests((prev) =>
       prev.includes(interest)
         ? prev.filter((i) => i !== interest)
         : [...prev, interest],
     );
+  };
+
+  const addCustomInterest = () => {
+    const trimmed = newInterest.trim();
+    if (!trimmed) return;
+    setInterests((currentInterests) =>
+      currentInterests.some(
+        (interest) => interest.toLowerCase() === trimmed.toLowerCase(),
+      )
+        ? currentInterests
+        : [...currentInterests, trimmed],
+    );
+    setNewInterest("");
   };
 
   const toggleDay = (day: string) => {
@@ -394,7 +387,7 @@ export const YouthProfilePage: React.FC = () => {
                 Skills:
               </label>
               <div className="flex flex-wrap gap-1.5">
-                {COMMON_SKILLS.map((skill) => (
+                {Array.from(new Set([...COMMON_SKILLS, ...skills])).map((skill) => (
                   <button
                     key={skill}
                     type="button"
@@ -409,6 +402,35 @@ export const YouthProfilePage: React.FC = () => {
                   </button>
                 ))}
               </div>
+              <div className="flex gap-2 mt-3">
+                <label htmlFor="profile-new-skill" className="sr-only">
+                  Add a skill
+                </label>
+                <input
+                  id="profile-new-skill"
+                  type="text"
+                  value={newSkill}
+                  onChange={(event) => setNewSkill(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      addCustomSkill();
+                    }
+                  }}
+                  placeholder="Add a skill"
+                  autoComplete="off"
+                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:bg-white uk-focus-ring"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomSkill}
+                  disabled={!newSkill.trim()}
+                  className="px-3.5 py-2 bg-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-slate-900 flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add</span>
+                </button>
+              </div>
             </div>
 
             <div>
@@ -416,7 +438,7 @@ export const YouthProfilePage: React.FC = () => {
                 Interests:
               </label>
               <div className="flex flex-wrap gap-1.5">
-                {COMMON_INTERESTS.map((interest) => (
+                {Array.from(new Set([...COMMON_INTERESTS, ...interests])).map((interest) => (
                   <button
                     key={interest}
                     type="button"
@@ -430,6 +452,35 @@ export const YouthProfilePage: React.FC = () => {
                     {interest}
                   </button>
                 ))}
+              </div>
+              <div className="flex gap-2 mt-3">
+                <label htmlFor="profile-new-interest" className="sr-only">
+                  Add an interest
+                </label>
+                <input
+                  id="profile-new-interest"
+                  type="text"
+                  value={newInterest}
+                  onChange={(event) => setNewInterest(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      addCustomInterest();
+                    }
+                  }}
+                  placeholder="Add an interest"
+                  autoComplete="off"
+                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:bg-white uk-focus-ring"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomInterest}
+                  disabled={!newInterest.trim()}
+                  className="px-3.5 py-2 bg-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-slate-900 flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add</span>
+                </button>
               </div>
             </div>
           </div>

@@ -1,0 +1,33 @@
+export const COMMON_SKILLS = [
+  "Python",
+  "JavaScript",
+  "TypeScript",
+  "HTML/CSS",
+  "Customer Service",
+  "Communication",
+  "Teamwork",
+  "Problem Solving",
+  "Social Media",
+  "Retail",
+  "Cash Handling",
+  "Event Planning",
+  "First Aid",
+  "Graphic Design",
+  "Writing",
+  "Video Editing",
+  "Administration",
+  "Leadership",
+];
+
+export const COMMON_INTERESTS = [
+  "Technology",
+  "Retail",
+  "Charity",
+  "Arts & Culture",
+  "Environment",
+  "Hospitality",
+  "Healthcare",
+  "Sports & Fitness",
+  "Education",
+  "Marketing",
+];

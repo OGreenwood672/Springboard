@@ -19,3 +19,11 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 window.HTMLElement.prototype.scrollIntoView = function() {};
+
+class ResizeObserverMock implements ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+globalThis.ResizeObserver = ResizeObserverMock;

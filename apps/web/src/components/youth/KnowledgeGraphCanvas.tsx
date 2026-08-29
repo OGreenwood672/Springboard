@@ -1,5 +1,19 @@
-import React, { useMemo, useState } from "react";
-import { Minus, Plus, RotateCcw } from "lucide-react";
+import React, { memo, useEffect, useMemo } from "react";
+import {
+  Background,
+  BackgroundVariant,
+  Controls,
+  Handle,
+  Node,
+  NodeProps,
+  PanOnScrollMode,
+  Position,
+  ReactFlow,
+  ReactFlowProvider,
+  useNodesState,
+  useReactFlow,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import {
   KnowledgeGraphEdge,
   KnowledgeGraphNode,
@@ -13,191 +27,270 @@ interface Props {
   onSelect: (node: KnowledgeGraphNode) => void;
 }
 
-interface PositionedNode extends KnowledgeGraphNode {
-  x: number;
-  y: number;
+interface SkillNodeData extends Record<string, unknown> {
+  skill: KnowledgeGraphNode;
+  dimmed: boolean;
 }
 
-const WIDTH = 900;
-const HEIGHT = 560;
-const CENTER_X = WIDTH / 2;
-const CENTER_Y = HEIGHT / 2;
+type SkillFlowNode = Node<SkillNodeData, "skill">;
 
-function placeNodes(nodes: KnowledgeGraphNode[]): PositionedNode[] {
+const NODE_WIDTH = 174;
+const NODE_HEIGHT = 76;
+const CENTER_X = 600;
+const CENTER_Y = 440;
+
+function placeNodes(nodes: KnowledgeGraphNode[], activeSector?: string): SkillFlowNode[] {
   const current = nodes.filter((node) => node.status === "current");
   const frontier = nodes.filter((node) => node.status === "frontier");
+  const isDimmed = (node: KnowledgeGraphNode) =>
+    Boolean(activeSector && activeSector !== "All sectors" && node.sector !== activeSector);
+
   const placeRing = (
     ring: KnowledgeGraphNode[],
     radiusX: number,
     radiusY: number,
-    offset: number,
-  ) =>
-    ring.map((node, index) => {
-      const angle = (Math.PI * 2 * index) / Math.max(ring.length, 1) - Math.PI / 2 + offset;
+    angleOffset: number,
+  ): SkillFlowNode[] =>
+    ring.map((skill, index) => {
+      const angle = (Math.PI * 2 * index) / Math.max(ring.length, 1) - Math.PI / 2 + angleOffset;
       return {
-        ...node,
-        x: CENTER_X + Math.cos(angle) * radiusX,
-        y: CENTER_Y + Math.sin(angle) * radiusY,
+        id: skill.id,
+        type: "skill",
+        position: {
+          x: CENTER_X + Math.cos(angle) * radiusX - NODE_WIDTH / 2,
+          y: CENTER_Y + Math.sin(angle) * radiusY - NODE_HEIGHT / 2,
+        },
+        data: { skill, dimmed: isDimmed(skill) },
+        width: NODE_WIDTH,
+        height: NODE_HEIGHT,
+        ariaLabel: `${skill.label}, ${skill.status} skill`,
       };
     });
 
   return [
-    ...placeRing(current, 155, 118, 0),
-    ...placeRing(frontier, 340, 220, Math.PI / Math.max(frontier.length, 1)),
+    ...placeRing(current, 255, 190, 0),
+    ...placeRing(frontier, 505, 355, Math.PI / Math.max(frontier.length, 1)),
   ];
 }
 
-function labelLines(label: string): string[] {
-  if (label.length <= 14) return [label];
-  const words = label.split(" ");
-  if (words.length === 1) return [label];
-  const midpoint = Math.ceil(words.length / 2);
-  return [words.slice(0, midpoint).join(" "), words.slice(midpoint).join(" ")];
+const handleStyle = {
+  width: 2,
+  height: 2,
+  minWidth: 0,
+  minHeight: 0,
+  border: 0,
+  opacity: 0,
+  pointerEvents: "none" as const,
+};
+
+const SkillNode = memo(({ data, selected }: NodeProps<SkillFlowNode>) => {
+  const { skill, dimmed } = data;
+  const current = skill.status === "current";
+
+  return (
+    <div
+      className={`skill-graph-node h-[76px] w-[174px] rounded-lg border px-3.5 py-3 shadow-sm transition-[opacity,box-shadow,border-color] ${
+        current
+          ? "border-emerald-800 bg-emerald-800 text-white"
+          : "border-amber-300 bg-white text-slate-900"
+      } ${selected ? "skill-graph-node--selected" : ""}`}
+      style={{ opacity: dimmed ? 0.3 : 1 }}
+    >
+      {[Position.Top, Position.Right, Position.Bottom, Position.Left].map((position) => (
+        <React.Fragment key={position}>
+          <Handle
+            id={`target-${position}`}
+            type="target"
+            position={position}
+            isConnectable={false}
+            style={handleStyle}
+          />
+          <Handle
+            id={`source-${position}`}
+            type="source"
+            position={position}
+            isConnectable={false}
+            style={handleStyle}
+          />
+        </React.Fragment>
+      ))}
+
+      <div className="flex items-center justify-between gap-2">
+        <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase ${current ? "text-emerald-100" : "text-amber-700"}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${current ? "bg-emerald-300" : "bg-amber-500"}`} />
+          {current ? "Current" : "Frontier"}
+        </span>
+        {skill.opportunity_count > 0 && (
+          <span className={`text-[10px] font-bold ${current ? "text-emerald-100" : "text-slate-500"}`}>
+            {skill.opportunity_count} role{skill.opportunity_count === 1 ? "" : "s"}
+          </span>
+        )}
+      </div>
+      <p className="mt-1 truncate text-sm font-bold" title={skill.label}>{skill.label}</p>
+      <p className={`mt-0.5 truncate text-[10px] font-medium ${current ? "text-emerald-100" : "text-slate-500"}`} title={skill.sector}>
+        {skill.sector}
+      </p>
+    </div>
+  );
+});
+
+SkillNode.displayName = "SkillNode";
+
+const nodeTypes = { skill: SkillNode };
+
+function edgeSides(source: SkillFlowNode, target: SkillFlowNode) {
+  const sourceCenter = {
+    x: source.position.x + NODE_WIDTH / 2,
+    y: source.position.y + NODE_HEIGHT / 2,
+  };
+  const targetCenter = {
+    x: target.position.x + NODE_WIDTH / 2,
+    y: target.position.y + NODE_HEIGHT / 2,
+  };
+  const dx = targetCenter.x - sourceCenter.x;
+  const dy = targetCenter.y - sourceCenter.y;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx >= 0
+      ? { source: Position.Right, target: Position.Left }
+      : { source: Position.Left, target: Position.Right };
+  }
+  return dy >= 0
+    ? { source: Position.Bottom, target: Position.Top }
+    : { source: Position.Top, target: Position.Bottom };
 }
 
-export const KnowledgeGraphCanvas: React.FC<Props> = ({
+const GraphViewport: React.FC<Props> = ({
   nodes,
   edges,
   selectedNodeId,
   activeSector,
   onSelect,
 }) => {
-  const [zoom, setZoom] = useState(1);
-  const positioned = useMemo(() => placeNodes(nodes), [nodes]);
+  const initialNodes = useMemo(() => placeNodes(nodes, activeSector), [nodes]);
+  const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<SkillFlowNode>(initialNodes);
+  const { setCenter } = useReactFlow<SkillFlowNode>();
+
+  useEffect(() => {
+    setFlowNodes(
+      placeNodes(nodes, activeSector).map((node) => ({
+        ...node,
+        selected: node.id === selectedNodeId,
+      })),
+    );
+  }, [nodes, setFlowNodes]);
+
+  useEffect(() => {
+    setFlowNodes((currentNodes) =>
+      currentNodes.map((node) => ({
+        ...node,
+        selected: node.id === selectedNodeId,
+        data: {
+          ...node.data,
+          dimmed: Boolean(
+            activeSector
+            && activeSector !== "All sectors"
+            && node.data.skill.sector !== activeSector,
+          ),
+        },
+      })),
+    );
+  }, [activeSector, selectedNodeId, setFlowNodes]);
+
   const positions = useMemo(
-    () => new Map(positioned.map((node) => [node.id, node])),
-    [positioned],
+    () => new Map(flowNodes.map((node) => [node.id, node])),
+    [flowNodes],
   );
 
-  const isDimmed = (node: KnowledgeGraphNode) =>
-    Boolean(activeSector && activeSector !== "All sectors" && node.sector !== activeSector);
+  const flowEdges = useMemo(
+    () => edges.flatMap((edge) => {
+      const source = positions.get(edge.source);
+      const target = positions.get(edge.target);
+      if (!source || !target) return [];
+
+      const connected = selectedNodeId === edge.source || selectedNodeId === edge.target;
+      const relationshipColor = edge.relationship === "used_together" ? "#64748b" : "#d97706";
+      const sides = edgeSides(source, target);
+
+      return [{
+        id: `${edge.source}-${edge.target}`,
+        source: edge.source,
+        target: edge.target,
+        sourceHandle: `source-${sides.source}`,
+        targetHandle: `target-${sides.target}`,
+        type: "default",
+        interactionWidth: 20,
+        focusable: false,
+        selectable: false,
+        style: {
+          stroke: relationshipColor,
+          strokeWidth: connected ? 2.8 : 1.5,
+          strokeDasharray: edge.relationship === "related" ? "7 6" : undefined,
+          opacity: selectedNodeId ? (connected ? 0.95 : 0.1) : 0.45,
+        },
+      }];
+    }),
+    [edges, positions, selectedNodeId],
+  );
 
   return (
-    <div className="relative h-full min-h-0 overflow-hidden bg-slate-50">
-      <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm">
-        <button
-          type="button"
-          onClick={() => setZoom((value) => Math.max(0.8, value - 0.1))}
-          className="uk-focus-ring p-2 text-slate-600 hover:bg-slate-100"
-          aria-label="Zoom out"
-          title="Zoom out"
-        >
-          <Minus className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setZoom(1)}
-          className="uk-focus-ring p-2 text-slate-600 hover:bg-slate-100"
-          aria-label="Reset zoom"
-          title="Reset zoom"
-        >
-          <RotateCcw className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setZoom((value) => Math.min(1.3, value + 0.1))}
-          className="uk-focus-ring p-2 text-slate-600 hover:bg-slate-100"
-          aria-label="Zoom in"
-          title="Zoom in"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
+    <ReactFlow<SkillFlowNode>
+      nodes={flowNodes}
+      edges={flowEdges}
+      nodeTypes={nodeTypes}
+      onNodesChange={onNodesChange}
+      onNodeClick={(_, node) => onSelect(node.data.skill)}
+      onNodeDoubleClick={(_, node) => {
+        onSelect(node.data.skill);
+        void setCenter(
+          node.position.x + NODE_WIDTH / 2,
+          node.position.y + NODE_HEIGHT / 2,
+          { zoom: 1.35, duration: 350 },
+        );
+      }}
+      fitView
+      fitViewOptions={{ padding: 0.22, minZoom: 0.45, maxZoom: 1 }}
+      minZoom={0.3}
+      maxZoom={2.25}
+      panOnDrag
+      panOnScroll
+      panOnScrollMode={PanOnScrollMode.Free}
+      panOnScrollSpeed={0.8}
+      zoomOnScroll={false}
+      zoomOnPinch
+      zoomOnDoubleClick
+      nodesDraggable
+      nodesConnectable={false}
+      elementsSelectable
+      deleteKeyCode={null}
+      selectionKeyCode={null}
+      multiSelectionKeyCode={null}
+      proOptions={{ hideAttribution: false }}
+      aria-label="Interactive map of current and frontier skills"
+    >
+      <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="#cbd5e1" />
+      <Controls
+        position="top-right"
+        orientation="horizontal"
+        showInteractive={false}
+        fitViewOptions={{ padding: 0.22, duration: 300 }}
+        className="skill-graph-controls"
+      />
+      <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-md border border-slate-200 bg-white/95 px-3 py-2.5 text-[10px] font-semibold text-slate-600 shadow-sm backdrop-blur">
+        <p className="mb-2 font-bold uppercase text-slate-800">Connections</p>
+        <div className="space-y-1.5">
+          <span className="flex items-center gap-2"><span className="block h-0.5 w-7 bg-slate-500" /> Used together in a role</span>
+          <span className="flex items-center gap-2"><span className="block w-7 border-t-2 border-dashed border-amber-600" /> Related growth path</span>
+        </div>
       </div>
-
-      <svg
-        className="h-full w-full"
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        role="img"
-        aria-label="Interactive map of current and frontier skills"
-      >
-        <g transform={`translate(${CENTER_X * (1 - zoom)} ${CENTER_Y * (1 - zoom)}) scale(${zoom})`}>
-          {edges.map((edge) => {
-            const source = positions.get(edge.source);
-            const target = positions.get(edge.target);
-            if (!source || !target) return null;
-            const faded = isDimmed(source) && isDimmed(target);
-            return (
-              <line
-                key={`${edge.source}-${edge.target}`}
-                x1={source.x}
-                y1={source.y}
-                x2={target.x}
-                y2={target.y}
-                stroke={edge.relationship === "used_together" ? "#94a3b8" : "#cbd5e1"}
-                strokeWidth={edge.relationship === "used_together" ? 2 : 1.5}
-                strokeDasharray={edge.relationship === "related" ? "5 6" : undefined}
-                opacity={faded ? 0.18 : 0.75}
-              />
-            );
-          })}
-
-          <circle cx={CENTER_X} cy={CENTER_Y} r="205" fill="none" stroke="#dbe4ea" strokeDasharray="3 8" />
-          <circle cx={CENTER_X} cy={CENTER_Y} r="82" fill="#ecfdf5" stroke="#a7f3d0" />
-          <text x={CENTER_X} y={CENTER_Y - 7} textAnchor="middle" className="fill-emerald-900 text-[17px] font-bold">
-            Your knowledge
-          </text>
-          <text x={CENTER_X} y={CENTER_Y + 17} textAnchor="middle" className="fill-emerald-700 text-[12px] font-semibold">
-            {nodes.filter((node) => node.status === "current").length} skills
-          </text>
-
-          {positioned.map((node) => {
-            const current = node.status === "current";
-            const selected = node.id === selectedNodeId;
-            const dimmed = isDimmed(node);
-            const lines = labelLines(node.label);
-            const radius = current ? 48 : 42;
-            return (
-              <g
-                key={node.id}
-                role="button"
-                tabIndex={0}
-                aria-label={`${node.label}, ${current ? "current skill" : "frontier skill"}`}
-                onClick={() => onSelect(node)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onSelect(node);
-                  }
-                }}
-                className="cursor-pointer outline-none"
-                opacity={dimmed ? 0.28 : 1}
-              >
-                {selected && (
-                  <circle cx={node.x} cy={node.y} r={radius + 7} fill="none" stroke="#0f766e" strokeWidth="3" />
-                )}
-                <circle
-                  cx={node.x}
-                  cy={node.y}
-                  r={radius}
-                  fill={current ? "#047857" : "#fffbeb"}
-                  stroke={current ? "#065f46" : "#f59e0b"}
-                  strokeWidth={current ? 2 : 3}
-                />
-                <text
-                  x={node.x}
-                  y={node.y - (lines.length - 1) * 8}
-                  textAnchor="middle"
-                  className={`${current ? "fill-white" : "fill-amber-950"} text-[12px] font-bold`}
-                >
-                  {lines.map((line, index) => (
-                    <tspan key={line} x={node.x} dy={index === 0 ? 0 : 16}>
-                      {line}
-                    </tspan>
-                  ))}
-                </text>
-                {!current && node.opportunity_count > 0 && (
-                  <g>
-                    <circle cx={node.x + 31} cy={node.y - 31} r="13" fill="#f59e0b" />
-                    <text x={node.x + 31} y={node.y - 27} textAnchor="middle" className="fill-white text-[10px] font-bold">
-                      {node.opportunity_count}
-                    </text>
-                  </g>
-                )}
-              </g>
-            );
-          })}
-        </g>
-      </svg>
-    </div>
+    </ReactFlow>
   );
 };
+
+export const KnowledgeGraphCanvas: React.FC<Props> = (props) => (
+  <div className="relative h-full min-h-0 overflow-hidden bg-slate-50">
+    <ReactFlowProvider>
+      <GraphViewport {...props} />
+    </ReactFlowProvider>
+  </div>
+);
