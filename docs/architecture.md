@@ -226,3 +226,20 @@ $$\text{Total Score} = \min(100, S_{\text{type}} + S_{\text{skills}} + S_{\text{
 | **Location & Travel Radius ($S_{\text{location}}$)** | 25 pts | Remote: **25 pts**.<br>In-person: Geodesic distance $d$. If $d \le \text{max\_travel\_km}$, score $= 25 \times (1 - d/\text{max\_travel\_km})$. Beyond radius: **0 pts**. |
 | **Availability & Schedule ($S_{\text{availability}}$)** | 10 pts | Matches available days (e.g. Saturday/Sunday) against role schedule. |
 | **Qualifications ($S_{\text{qualification}}$)** | 5 pts bonus | **+5 pts** if youth has recorded GCSE/A-Level/BTEC qualifications. |
+
+---
+
+## 7. Semantic Skill Catalogue
+
+The knowledge graph resolves profile and opportunity skill strings through a persisted catalogue before scoring or rendering. Resolution follows this order:
+
+1. Exact canonical-name or alias lookup.
+2. High-confidence Gemini embedding similarity.
+3. Structured Gemini classification for ambiguous or new skills.
+4. Literal canonical skill creation when semantic inference is unavailable.
+
+`skills`, `skill_aliases`, `skill_categories`, and `skill_relationships` retain model version, confidence, and provenance. Gemini supplies canonicalisation, intrinsic cross-sector categories, descriptions, aliases, and typed relationships; embeddings supply weighted `related_to` links; published opportunities remain the authority for `used_together` links and labour-market demand. Category inference is versioned so taxonomy changes can re-enrich existing model-classified entries once without regenerating them on every graph render.
+
+Skill categories and employment sectors are separate concepts. A graph node exposes one intrinsic `category` (for example, `Transferable Skills`) and zero or more `sectors` derived from published opportunities that require that skill. Sector filtering uses the evidence-backed `sectors` list and never the category label.
+
+Profile interests use the same semantic catalogue but remain a distinct graph node kind. The graph ranks shared categories, explicit model relationships, and high-confidence embedding evidence, retaining at most four skill links per interest to prevent dense clusters. Interests without qualifying evidence remain visible as standalone nodes rather than receiving fabricated connections.

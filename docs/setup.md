@@ -81,7 +81,9 @@ JWT_ALGORITHM="HS256"
 # Optional: Google Gemini API Key for LLM Tool Calling
 # If left blank, the platform automatically runs in deterministic offline mock agent mode!
 GEMINI_API_KEY=""
-GEMINI_MODEL="gemini-2.5-flash"
+GEMINI_MODEL="gemini-3.6-flash"
+GEMINI_EMBEDDING_MODEL="gemini-embedding-001"
+SEMANTIC_SKILLS_ENABLED=true
 ```
 
 ---
@@ -179,6 +181,7 @@ npx pnpm --filter @springboard/web build
 Springboard features a **dual-mode agent architecture**:
 - **Offline / Standalone Mode (Default)**: When `GEMINI_API_KEY` is not provided (or empty), the platform runs a local rule-based intent router that invokes the exact same typed tools, creates identical pending action cards, and functions 100% offline with zero external network requests.
 - **Live Gemini Agent Mode**: When `GEMINI_API_KEY` is configured, Springboard connects to Google Gemini via the official `google-genai` SDK, using native function calling and structured tool declarations.
+- **Semantic Skills Mode**: The same key enables canonical skill names, aliases, model-derived categories and typed relationships. Embeddings are persisted and reused; the graph falls back to published-opportunity co-occurrence when the key is blank or inference fails.
 
 ### Step 1: Obtain a Gemini API Key
 1. Go to the [Google AI Studio](https://aistudio.google.com/).
@@ -196,15 +199,15 @@ Open `services/api/.env` (or copy from `services/api/.env.example` if `.env` doe
 # Paste your Google AI Studio API key here
 GEMINI_API_KEY="AIzaSyYourGeneratedGeminiKeyHere"
 
-# Choose your preferred Gemini model (defaults to gemini-2.5-flash)
-GEMINI_MODEL="gemini-2.5-flash"
+# Choose your preferred Gemini model (defaults to gemini-3.6-flash)
+GEMINI_MODEL="gemini-3.6-flash"
+GEMINI_EMBEDDING_MODEL="gemini-embedding-001"
+SEMANTIC_SKILLS_ENABLED=true
 ```
 
 ### Step 3: Supported Gemini Models
 The following models are supported out of the box:
-- `gemini-2.5-flash` (**Recommended**): High speed, low latency, native tool calling, optimized for multi-turn assistant dialogues.
-- `gemini-2.0-flash`: General-purpose fast model.
-- `gemini-1.5-flash`: Legacy stable version.
+- `gemini-3.6-flash` (**Recommended**): Current fast model used for structured skill classification and agent interactions.
 
 ### Step 4: Restart the FastAPI Server
 Restart your FastAPI backend server to load the new environment variables:

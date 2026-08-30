@@ -4,43 +4,29 @@ from typing import Iterable
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.opportunity import Opportunity
+from app.models.skill import Skill
 from app.models.youth_profile import YouthProfile
-
-
-# This compact taxonomy provides useful links when the live opportunity catalogue
-# does not yet contain enough co-occurrence data to connect a user's skills.
-SKILL_TAXONOMY = {
-    "python": ("Digital & Technology", ["data analysis", "git", "html/css"]),
-    "html/css": ("Digital & Technology", ["javascript", "web design", "git"]),
-    "javascript": ("Digital & Technology", ["html/css", "web design", "git"]),
-    "git": ("Digital & Technology", ["python", "javascript", "teamwork"]),
-    "data analysis": ("Digital & Technology", ["python", "problem solving", "spreadsheets"]),
-    "web design": ("Creative & Digital", ["html/css", "content creation", "canva"]),
-    "problem solving": ("Transferable", ["data analysis", "python", "leadership"]),
-    "teamwork": ("Transferable", ["communication", "leadership", "project management"]),
-    "leadership": ("Transferable", ["teamwork", "communication", "project management"]),
-    "communication": ("Transferable", ["customer service", "event planning", "leadership"]),
-    "customer service": ("Retail & Hospitality", ["communication", "cash handling", "sales"]),
-    "cash handling": ("Retail & Hospitality", ["customer service", "sales", "numeracy"]),
-    "sales": ("Retail & Hospitality", ["customer service", "communication", "social media"]),
-    "event planning": ("Events & Community", ["project management", "social media", "leadership"]),
-    "project management": ("Business & Operations", ["event planning", "leadership", "spreadsheets"]),
-    "social media": ("Creative & Digital", ["content creation", "video editing", "canva"]),
-    "content creation": ("Creative & Digital", ["social media", "video editing", "canva"]),
-    "video editing": ("Creative & Digital", ["content creation", "social media", "canva"]),
-    "canva": ("Creative & Digital", ["content creation", "social media", "web design"]),
-    "first aid": ("Health & Community", ["safeguarding", "communication", "teamwork"]),
-    "safeguarding": ("Health & Community", ["first aid", "communication", "leadership"]),
-}
-
-
-def _normalize(skill: str) -> str:
-    return re.sub(r"\s+", " ", skill.strip().lower())
+from app.services.skill_semantics_service import (
+    SkillCatalogueService,
+    category_embeddings_by_name,
+    category_embeddings_by_skill,
+    category_names_by_skill,
+    cosine_similarity,
+    normalize_skill,
+    semantic_relationship_evidence_by_name,
+    semantic_relationships_by_name,
+)
 
 
 def _slug(skill: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", _normalize(skill)).strip("-")
+    return re.sub(r"[^a-z0-9]+", "-", normalize_skill(skill)).strip("-")
+
+
+def _node_id(concept: str, kind: str = "skill") -> str:
+    slug = _slug(concept)
+    return f"interest-{slug}" if kind == "interest" else slug
 
 
 def _display(skill: str, labels: dict[str, str]) -> str:
@@ -61,13 +47,33 @@ def build_knowledge_graph(db: Session, profile: YouthProfile) -> dict:
         .order_by(Opportunity.created_at.desc())
         .all()
     )
-    labels: dict[str, str] = {}
-    current = set()
-    for raw_skill in profile.skills or []:
-        normalized = _normalize(raw_skill)
-        if normalized:
-            current.add(normalized)
-            labels.setdefault(normalized, raw_skill.strip())
+    raw_skills = list(profile.skills or [])
+    raw_interests = list(profile.interests or [])
+    sector_hints: dict[str, list[str]] = defaultdict(list)
+    for opportunity in opportunities:
+        sector = opportunity.business.organisation_type if opportunity.business else "Other"
+        for raw_skill in (opportunity.required_skills or []) + (opportunity.preferred_skills or []):
+            raw_skills.append(raw_skill)
+            sector_hints[raw_skill].append(sector)
+
+    resolved = SkillCatalogueService(db).resolve_many(
+        raw_skills + raw_interests,
+        dict(sector_hints),
+    )
+
+    def canonical(raw_skill: str) -> str:
+        normalized = normalize_skill(raw_skill)
+        skill = resolved.get(normalized)
+        return skill.normalized_name if skill else normalized
+
+    catalogue = db.query(Skill).all()
+    labels = {skill.normalized_name: skill.canonical_name for skill in catalogue}
+    current = {canonical(raw_skill) for raw_skill in profile.skills or [] if raw_skill.strip()}
+    interests = {
+        canonical(raw_interest)
+        for raw_interest in profile.interests or []
+        if raw_interest.strip()
+    }
 
     demand = Counter()
     required_demand = Counter()
@@ -77,13 +83,13 @@ def build_knowledge_graph(db: Session, profile: YouthProfile) -> dict:
 
     for opportunity in opportunities:
         sector = opportunity.business.organisation_type if opportunity.business else "Other"
-        required = {_normalize(skill) for skill in opportunity.required_skills or [] if skill.strip()}
-        preferred = {_normalize(skill) for skill in opportunity.preferred_skills or [] if skill.strip()}
+        required = {canonical(skill) for skill in opportunity.required_skills or [] if skill.strip()}
+        preferred = {canonical(skill) for skill in opportunity.preferred_skills or [] if skill.strip()}
         all_skills = required | preferred
         opportunity_skills[str(opportunity.id)] = all_skills
 
         for raw_skill in (opportunity.required_skills or []) + (opportunity.preferred_skills or []):
-            labels.setdefault(_normalize(raw_skill), raw_skill.strip())
+            labels.setdefault(canonical(raw_skill), raw_skill.strip())
         for skill in all_skills:
             demand[skill] += 1
             skill_sectors[skill][sector] += 1
@@ -94,14 +100,76 @@ def build_knowledge_graph(db: Session, profile: YouthProfile) -> dict:
 
     candidate_connections = Counter()
     candidate_reasons: dict[str, set[str]] = defaultdict(set)
+    semantic_relationships = semantic_relationships_by_name(db)
+    relationship_evidence = semantic_relationship_evidence_by_name(db)
+    semantic_categories = category_names_by_skill(db)
+    category_embeddings = category_embeddings_by_skill(db)
+    category_vectors = category_embeddings_by_name(db)
 
-    for skill in current:
-        taxonomy = SKILL_TAXONOMY.get(skill)
-        if taxonomy:
-            for neighbour in taxonomy[1]:
-                if neighbour not in current:
-                    candidate_connections[neighbour] += 1
-                    candidate_reasons[neighbour].add(_display(skill, labels))
+    closest_category: dict[str, tuple[str, float]] = {}
+    for source_category, source_vector in category_vectors.items():
+        candidates = (
+            (target_category, cosine_similarity(source_vector, target_vector))
+            for target_category, target_vector in category_vectors.items()
+            if target_category != source_category
+        )
+        closest_category[source_category] = max(
+            candidates,
+            key=lambda item: item[1],
+            default=("", 0),
+        )
+
+    def category_equivalence_score(source: str, target: str) -> float:
+        source_category = semantic_categories.get(source)
+        target_category = semantic_categories.get(target)
+        if not source_category or not target_category:
+            return 0
+        if source_category == target_category:
+            return 0.8
+        similarity = cosine_similarity(
+            category_embeddings.get(source, []),
+            category_embeddings.get(target, []),
+        )
+        source_match = closest_category.get(source_category, ("", 0))[0]
+        target_match = closest_category.get(target_category, ("", 0))[0]
+        if (
+            source_match == target_category
+            and target_match == source_category
+            and similarity >= settings.SEMANTIC_CATEGORY_THRESHOLD
+        ):
+            return similarity
+        return 0
+
+    def interest_connection_score(source: str, target: str) -> float:
+        pair = tuple(sorted((source, target)))
+        evidence = relationship_evidence.get(pair, [])
+        explicit = max(
+            (relationship.confidence for relationship in evidence if relationship.provenance == "model"),
+            default=0,
+        )
+        embedding = max(
+            (relationship.confidence for relationship in evidence if relationship.provenance == "embedding"),
+            default=0,
+        )
+        return max(
+            explicit + 0.15 if explicit >= 0.7 else 0,
+            embedding if embedding >= 0.84 else 0,
+            category_equivalence_score(source, target),
+        )
+
+    for (source, target), relationship in semantic_relationships.items():
+        source_owned = source in current or (
+            source in interests and interest_connection_score(source, target) > 0
+        )
+        target_owned = target in current or (
+            target in interests and interest_connection_score(target, source) > 0
+        )
+        if source_owned and target not in current and target not in interests and demand[target]:
+            candidate_connections[target] += max(relationship.weight, 0.25)
+            candidate_reasons[target].add(_display(source, labels))
+        elif target_owned and source not in current and source not in interests and demand[source]:
+            candidate_connections[source] += max(relationship.weight, 0.25)
+            candidate_reasons[source].add(_display(target, labels))
 
     for all_skills in opportunity_skills.values():
         owned_in_role = all_skills & current
@@ -121,19 +189,24 @@ def build_knowledge_graph(db: Session, profile: YouthProfile) -> dict:
     frontier = set(ranked_frontier)
     graph_skills = current | frontier
 
-    def sector_for(skill: str) -> str:
-        if skill_sectors[skill]:
-            return skill_sectors[skill].most_common(1)[0][0]
-        return SKILL_TAXONOMY.get(skill, ("Transferable", []))[0]
+    def category_for(skill: str) -> str:
+        if skill in semantic_categories:
+            return semantic_categories[skill]
+        return "Uncategorised"
+
+    def sectors_for(skill: str) -> list[str]:
+        return sorted(skill_sectors[skill])
 
     nodes = []
     for skill in sorted(current, key=lambda value: _display(value, labels)):
         role_count = demand[skill]
         nodes.append({
-            "id": _slug(skill),
+            "id": _node_id(skill),
             "label": _display(skill, labels),
+            "kind": "skill",
             "status": "current",
-            "sector": sector_for(skill),
+            "category": category_for(skill),
+            "sectors": sectors_for(skill),
             "demand": demand[skill],
             "opportunity_count": role_count,
             "reason": f"Part of your profile and used by {role_count} open role{'s' if role_count != 1 else ''}.",
@@ -143,37 +216,70 @@ def build_knowledge_graph(db: Session, profile: YouthProfile) -> dict:
         bridge = " and ".join(source_labels) if source_labels else "your current skills"
         role_count = demand[skill]
         nodes.append({
-            "id": _slug(skill),
+            "id": _node_id(skill),
             "label": _display(skill, labels),
+            "kind": "skill",
             "status": "frontier",
-            "sector": sector_for(skill),
+            "category": category_for(skill),
+            "sectors": sectors_for(skill),
             "demand": demand[skill],
             "opportunity_count": role_count,
             "reason": f"Builds on {bridge} and strengthens {role_count} open role{'s' if role_count != 1 else ''}.",
+        })
+    for interest in sorted(interests, key=lambda value: _display(value, labels)):
+        nodes.append({
+            "id": _node_id(interest, "interest"),
+            "label": _display(interest, labels),
+            "kind": "interest",
+            "status": "current",
+            "category": category_for(interest),
+            "sectors": sectors_for(interest),
+            "demand": 0,
+            "opportunity_count": 0,
+            "reason": "An interest on your profile. Related skills and roles are connected when semantic evidence is available.",
         })
 
     edge_map: dict[tuple[str, str], str] = {}
     for source, target in _pairs(graph_skills):
         pair = (source, target)
-        taxonomy_linked = (
-            target in SKILL_TAXONOMY.get(source, ("", []))[1]
-            or source in SKILL_TAXONOMY.get(target, ("", []))[1]
-        )
         if co_occurrence[pair]:
             edge_map[pair] = "used_together"
-        elif taxonomy_linked:
+        elif pair in semantic_relationships:
             edge_map[pair] = "related"
 
     edges = [
-        {"source": _slug(source), "target": _slug(target), "relationship": relationship}
+        {"source": _node_id(source), "target": _node_id(target), "relationship": relationship}
         for (source, target), relationship in edge_map.items()
     ]
+
+    for interest in interests:
+        connected_skills = sorted(
+            (
+                (skill, interest_connection_score(interest, skill))
+                for skill in graph_skills
+                if interest_connection_score(interest, skill) > 0
+            ),
+            key=lambda item: (-item[1], -demand[item[0]], _display(item[0], labels)),
+        )[:4]
+        for skill, _score in connected_skills:
+            edges.append({
+                "source": _node_id(interest, "interest"),
+                "target": _node_id(skill),
+                "relationship": "interest_alignment",
+            })
+    for source, target in _pairs(interests):
+        if interest_connection_score(source, target) > 0:
+            edges.append({
+                "source": _node_id(source, "interest"),
+                "target": _node_id(target, "interest"),
+                "relationship": "interest_alignment",
+            })
 
     opportunity_results = []
     sector_roles: dict[str, list[dict]] = defaultdict(list)
     for opportunity in opportunities:
         all_skills = opportunity_skills[str(opportunity.id)]
-        required = {_normalize(skill) for skill in opportunity.required_skills or [] if skill.strip()}
+        required = {canonical(skill) for skill in opportunity.required_skills or [] if skill.strip()}
         preferred = all_skills - required
         matched = all_skills & current
         missing = all_skills - current
@@ -217,9 +323,9 @@ def build_knowledge_graph(db: Session, profile: YouthProfile) -> dict:
         "opportunities": opportunity_results,
         "stats": {
             "current_skills": len(current),
+            "current_interests": len(interests),
             "frontier_skills": len(frontier),
             "sectors_in_reach": len(sectors),
             "roles_in_reach": len(opportunities),
         },
     }
-

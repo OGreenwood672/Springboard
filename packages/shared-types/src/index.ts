@@ -61,8 +61,10 @@ export type KnowledgeNodeStatus = "current" | "frontier";
 export interface KnowledgeGraphNode {
   id: string;
   label: string;
+  kind: "skill" | "interest";
   status: KnowledgeNodeStatus;
-  sector: string;
+  category: string;
+  sectors: string[];
   demand: number;
   opportunity_count: number;
   reason: string;
@@ -71,7 +73,7 @@ export interface KnowledgeGraphNode {
 export interface KnowledgeGraphEdge {
   source: string;
   target: string;
-  relationship: "related" | "used_together";
+  relationship: "interest_alignment" | "related" | "used_together";
 }
 
 export interface SectorRecommendation {
@@ -101,6 +103,7 @@ export interface KnowledgeGraph {
   opportunities: KnowledgeOpportunity[];
   stats: {
     current_skills: number;
+    current_interests: number;
     frontier_skills: number;
     sectors_in_reach: number;
     roles_in_reach: number;

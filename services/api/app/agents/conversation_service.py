@@ -242,7 +242,7 @@ class ConversationService:
             from google.genai import types
 
             client = genai.Client(api_key=settings.GEMINI_API_KEY)
-            model_name = settings.GEMINI_MODEL or "gemini-2.5-flash"
+            model_name = settings.GEMINI_MODEL or "gemini-3.6-flash"
             system_prompt = YOUTH_AGENT_SYSTEM_PROMPT if conv.mode == "youth" else BUSINESS_AGENT_SYSTEM_PROMPT
             tools_spec = YOUTH_TOOL_DEFINITIONS if conv.mode == "youth" else BUSINESS_TOOL_DEFINITIONS
 
@@ -310,4 +310,3 @@ class ConversationService:
         except Exception as e:
             logger.warning(f"Gemini API invocation failed ({e}). Falling back to rule orchestrator.")
             return self._call_rule_orchestrator(conv, executor, message_text)
-

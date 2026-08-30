@@ -4,6 +4,7 @@ import { useToast } from "../../context/ToastContext";
 import { profilesApi } from "../../api/profiles";
 import { AICoachModal } from "../../components/youth/AICoachModal";
 import { LoadingSpinner } from "../../components/common/LoadingSpinner";
+import { ProfileTagSelector } from "../../components/youth/ProfileTagSelector";
 import { COMMON_INTERESTS, COMMON_SKILLS } from "../../data/profileOptions";
 import {
   AICoachExtractedProfile,
@@ -46,9 +47,7 @@ export const YouthProfilePage: React.FC = () => {
   const [postcode, setPostcode] = useState("");
   const [maxTravelKm, setMaxTravelKm] = useState(15);
   const [skills, setSkills] = useState<string[]>([]);
-  const [newSkill, setNewSkill] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
-  const [newInterest, setNewInterest] = useState("");
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [hoursPerWeek, setHoursPerWeek] = useState(8);
   const [educationStage, setEducationStage] = useState("sixth_form");
@@ -76,44 +75,6 @@ export const YouthProfilePage: React.FC = () => {
       setQualifications(profile.qualifications || []);
     }
   }, [profile]);
-
-  const toggleSkill = (skill: string) => {
-    setSkills((prev) =>
-      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
-    );
-  };
-
-  const addCustomSkill = () => {
-    const trimmed = newSkill.trim();
-    if (!trimmed) return;
-    setSkills((currentSkills) =>
-      currentSkills.some((skill) => skill.toLowerCase() === trimmed.toLowerCase())
-        ? currentSkills
-        : [...currentSkills, trimmed],
-    );
-    setNewSkill("");
-  };
-
-  const toggleInterest = (interest: string) => {
-    setInterests((prev) =>
-      prev.includes(interest)
-        ? prev.filter((i) => i !== interest)
-        : [...prev, interest],
-    );
-  };
-
-  const addCustomInterest = () => {
-    const trimmed = newInterest.trim();
-    if (!trimmed) return;
-    setInterests((currentInterests) =>
-      currentInterests.some(
-        (interest) => interest.toLowerCase() === trimmed.toLowerCase(),
-      )
-        ? currentInterests
-        : [...currentInterests, trimmed],
-    );
-    setNewInterest("");
-  };
 
   const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
@@ -382,107 +343,24 @@ export const YouthProfilePage: React.FC = () => {
               <Sparkles className="w-4 h-4 text-emerald-600" />
               Skills & Interests
             </h3>
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">
-                Skills:
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {Array.from(new Set([...COMMON_SKILLS, ...skills])).map((skill) => (
-                  <button
-                    key={skill}
-                    type="button"
-                    onClick={() => toggleSkill(skill)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                      skills.includes(skill)
-                        ? "bg-emerald-700 text-white shadow-2xs"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                  >
-                    {skill}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2 mt-3">
-                <label htmlFor="profile-new-skill" className="sr-only">
-                  Add a skill
-                </label>
-                <input
-                  id="profile-new-skill"
-                  type="text"
-                  value={newSkill}
-                  onChange={(event) => setNewSkill(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      addCustomSkill();
-                    }
-                  }}
-                  placeholder="Add a skill"
-                  autoComplete="off"
-                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:bg-white uk-focus-ring"
-                />
-                <button
-                  type="button"
-                  onClick={addCustomSkill}
-                  disabled={!newSkill.trim()}
-                  className="px-3.5 py-2 bg-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-slate-900 flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add</span>
-                </button>
-              </div>
-            </div>
+            <ProfileTagSelector
+              id="profile-new-skill"
+              label="Skills"
+              options={COMMON_SKILLS}
+              values={skills}
+              placeholder="Add a skill"
+              onChange={(values) => setSkills(values)}
+            />
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">
-                Interests:
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {Array.from(new Set([...COMMON_INTERESTS, ...interests])).map((interest) => (
-                  <button
-                    key={interest}
-                    type="button"
-                    onClick={() => toggleInterest(interest)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                      interests.includes(interest)
-                        ? "bg-teal-700 text-white shadow-2xs"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                  >
-                    {interest}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2 mt-3">
-                <label htmlFor="profile-new-interest" className="sr-only">
-                  Add an interest
-                </label>
-                <input
-                  id="profile-new-interest"
-                  type="text"
-                  value={newInterest}
-                  onChange={(event) => setNewInterest(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      addCustomInterest();
-                    }
-                  }}
-                  placeholder="Add an interest"
-                  autoComplete="off"
-                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:bg-white uk-focus-ring"
-                />
-                <button
-                  type="button"
-                  onClick={addCustomInterest}
-                  disabled={!newInterest.trim()}
-                  className="px-3.5 py-2 bg-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-slate-900 flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add</span>
-                </button>
-              </div>
-            </div>
+            <ProfileTagSelector
+              id="profile-new-interest"
+              label="Interests"
+              options={COMMON_INTERESTS}
+              values={interests}
+              placeholder="Add an interest"
+              tone="teal"
+              onChange={(values) => setInterests(values)}
+            />
           </div>
 
           {/* Availability */}

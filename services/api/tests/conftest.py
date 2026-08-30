@@ -13,6 +13,7 @@ geoalchemy2.admin.dialects.sqlite.after_create = _noop
 geoalchemy2.admin.dialects.sqlite.before_create = _noop
 
 from app.database import Base, get_db
+from app.config import settings
 from app.main import app
 from app.seed import seed_database
 
@@ -24,6 +25,11 @@ test_engine = create_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+
+
+@pytest.fixture(autouse=True)
+def disable_external_semantic_calls(monkeypatch):
+    monkeypatch.setattr(settings, "SEMANTIC_SKILLS_ENABLED", False)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -56,4 +62,3 @@ def client(db_session):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
-

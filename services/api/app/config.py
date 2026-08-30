@@ -1,9 +1,17 @@
+from pathlib import Path
 from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+API_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
+
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=API_ENV_FILE,
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     PROJECT_NAME: str = "Springboard UK API"
     ENVIRONMENT: str = "development"
@@ -17,7 +25,13 @@ class Settings(BaseSettings):
 
     # Gemini API Configuration (optional for standalone/offline mock agent mode)
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.6-flash"
+    GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
+    SEMANTIC_SKILLS_ENABLED: bool = True
+    SEMANTIC_EMBEDDING_DIMENSIONS: int = 768
+    SEMANTIC_ALIAS_THRESHOLD: float = 0.96
+    SEMANTIC_RELATIONSHIP_THRESHOLD: float = 0.72
+    SEMANTIC_CATEGORY_THRESHOLD: float = 0.90
 
     CORS_ORIGINS: List[str] = [
       "http://localhost:3000",

@@ -7,8 +7,10 @@ from pydantic import BaseModel
 class KnowledgeGraphNode(BaseModel):
     id: str
     label: str
+    kind: Literal["skill", "interest"]
     status: Literal["current", "frontier"]
-    sector: str
+    category: str
+    sectors: list[str]
     demand: int
     opportunity_count: int
     reason: str
@@ -17,7 +19,7 @@ class KnowledgeGraphNode(BaseModel):
 class KnowledgeGraphEdge(BaseModel):
     source: str
     target: str
-    relationship: Literal["related", "used_together"]
+    relationship: Literal["interest_alignment", "related", "used_together"]
 
 
 class SectorRecommendation(BaseModel):
@@ -42,6 +44,7 @@ class KnowledgeOpportunity(BaseModel):
 
 class KnowledgeGraphStats(BaseModel):
     current_skills: int
+    current_interests: int
     frontier_skills: int
     sectors_in_reach: int
     roles_in_reach: int
@@ -53,4 +56,3 @@ class KnowledgeGraphOut(BaseModel):
     sectors: list[SectorRecommendation]
     opportunities: list[KnowledgeOpportunity]
     stats: KnowledgeGraphStats
-

@@ -40,10 +40,11 @@ const CENTER_X = 600;
 const CENTER_Y = 440;
 
 function placeNodes(nodes: KnowledgeGraphNode[], activeSector?: string): SkillFlowNode[] {
-  const current = nodes.filter((node) => node.status === "current");
-  const frontier = nodes.filter((node) => node.status === "frontier");
+  const current = nodes.filter((node) => node.kind === "skill" && node.status === "current");
+  const interests = nodes.filter((node) => node.kind === "interest");
+  const frontier = nodes.filter((node) => node.kind === "skill" && node.status === "frontier");
   const isDimmed = (node: KnowledgeGraphNode) =>
-    Boolean(activeSector && activeSector !== "All sectors" && node.sector !== activeSector);
+    Boolean(activeSector && activeSector !== "All sectors" && !node.sectors.includes(activeSector));
 
   const placeRing = (
     ring: KnowledgeGraphNode[],
@@ -63,13 +64,14 @@ function placeNodes(nodes: KnowledgeGraphNode[], activeSector?: string): SkillFl
         data: { skill, dimmed: isDimmed(skill) },
         width: NODE_WIDTH,
         height: NODE_HEIGHT,
-        ariaLabel: `${skill.label}, ${skill.status} skill`,
+        ariaLabel: `${skill.label}, ${skill.kind === "interest" ? "interest" : `${skill.status} skill`}`,
       };
     });
 
   return [
-    ...placeRing(current, 255, 190, 0),
-    ...placeRing(frontier, 505, 355, Math.PI / Math.max(frontier.length, 1)),
+    ...placeRing(current, 235, 165, 0),
+    ...placeRing(interests, 375, 270, Math.PI / Math.max(interests.length, 1)),
+    ...placeRing(frontier, 535, 385, Math.PI / Math.max(frontier.length, 1)),
   ];
 }
 
@@ -86,11 +88,14 @@ const handleStyle = {
 const SkillNode = memo(({ data, selected }: NodeProps<SkillFlowNode>) => {
   const { skill, dimmed } = data;
   const current = skill.status === "current";
+  const interest = skill.kind === "interest";
 
   return (
     <div
       className={`skill-graph-node h-[76px] w-[174px] rounded-lg border px-3.5 py-3 shadow-sm transition-[opacity,box-shadow,border-color] ${
-        current
+        interest
+          ? "border-teal-700 bg-teal-700 text-white"
+          : current
           ? "border-emerald-800 bg-emerald-800 text-white"
           : "border-amber-300 bg-white text-slate-900"
       } ${selected ? "skill-graph-node--selected" : ""}`}
@@ -116,19 +121,19 @@ const SkillNode = memo(({ data, selected }: NodeProps<SkillFlowNode>) => {
       ))}
 
       <div className="flex items-center justify-between gap-2">
-        <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase ${current ? "text-emerald-100" : "text-amber-700"}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${current ? "bg-emerald-300" : "bg-amber-500"}`} />
-          {current ? "Current" : "Frontier"}
+        <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase ${interest ? "text-teal-50" : current ? "text-emerald-100" : "text-amber-700"}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${interest ? "bg-teal-200" : current ? "bg-emerald-300" : "bg-amber-500"}`} />
+          {interest ? "Interest" : current ? "Current" : "Frontier"}
         </span>
-        {skill.opportunity_count > 0 && (
+        {!interest && skill.opportunity_count > 0 && (
           <span className={`text-[10px] font-bold ${current ? "text-emerald-100" : "text-slate-500"}`}>
             {skill.opportunity_count} role{skill.opportunity_count === 1 ? "" : "s"}
           </span>
         )}
       </div>
       <p className="mt-1 truncate text-sm font-bold" title={skill.label}>{skill.label}</p>
-      <p className={`mt-0.5 truncate text-[10px] font-medium ${current ? "text-emerald-100" : "text-slate-500"}`} title={skill.sector}>
-        {skill.sector}
+      <p className={`mt-0.5 truncate text-[10px] font-medium ${interest ? "text-teal-50" : current ? "text-emerald-100" : "text-slate-500"}`} title={skill.category}>
+        {skill.category}
       </p>
     </div>
   );
@@ -190,7 +195,7 @@ const GraphViewport: React.FC<Props> = ({
           dimmed: Boolean(
             activeSector
             && activeSector !== "All sectors"
-            && node.data.skill.sector !== activeSector,
+            && !node.data.skill.sectors.includes(activeSector),
           ),
         },
       })),
@@ -209,7 +214,11 @@ const GraphViewport: React.FC<Props> = ({
       if (!source || !target) return [];
 
       const connected = selectedNodeId === edge.source || selectedNodeId === edge.target;
-      const relationshipColor = edge.relationship === "used_together" ? "#64748b" : "#d97706";
+      const relationshipColor = edge.relationship === "used_together"
+        ? "#64748b"
+        : edge.relationship === "interest_alignment"
+          ? "#0f766e"
+          : "#d97706";
       const sides = edgeSides(source, target);
 
       return [{
@@ -225,7 +234,11 @@ const GraphViewport: React.FC<Props> = ({
         style: {
           stroke: relationshipColor,
           strokeWidth: connected ? 2.8 : 1.5,
-          strokeDasharray: edge.relationship === "related" ? "7 6" : undefined,
+          strokeDasharray: edge.relationship === "related"
+            ? "7 6"
+            : edge.relationship === "interest_alignment"
+              ? "2 6"
+              : undefined,
           opacity: selectedNodeId ? (connected ? 0.95 : 0.1) : 0.45,
         },
       }];
@@ -266,7 +279,7 @@ const GraphViewport: React.FC<Props> = ({
       selectionKeyCode={null}
       multiSelectionKeyCode={null}
       proOptions={{ hideAttribution: false }}
-      aria-label="Interactive map of current and frontier skills"
+      aria-label="Interactive map of skills, interests, and growth opportunities"
     >
       <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="#cbd5e1" />
       <Controls
@@ -281,6 +294,13 @@ const GraphViewport: React.FC<Props> = ({
         <div className="space-y-1.5">
           <span className="flex items-center gap-2"><span className="block h-0.5 w-7 bg-slate-500" /> Used together in a role</span>
           <span className="flex items-center gap-2"><span className="block w-7 border-t-2 border-dashed border-amber-600" /> Related growth path</span>
+          <span className="flex items-center gap-2"><span className="block w-7 border-t-2 border-dotted border-teal-700" /> Aligned with an interest</span>
+        </div>
+        <p className="mb-1.5 mt-3 font-bold uppercase text-slate-800">Nodes</p>
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-700" /> Skill</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-teal-600" /> Interest</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full border border-amber-500 bg-white" /> Frontier</span>
         </div>
       </div>
     </ReactFlow>

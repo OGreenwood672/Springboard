@@ -6,6 +6,7 @@ import {
   Building2,
   Check,
   CircleAlert,
+  Heart,
   LoaderCircle,
   MapPin,
   Network,
@@ -21,7 +22,8 @@ import { KnowledgeGraph, KnowledgeGraphNode } from "@springboard/shared-types";
 import { profilesApi } from "../../api/profiles";
 import { LoadingSpinner } from "../../components/common/LoadingSpinner";
 import { KnowledgeGraphCanvas } from "../../components/youth/KnowledgeGraphCanvas";
-import { COMMON_SKILLS } from "../../data/profileOptions";
+import { ProfileTagSelector } from "../../components/youth/ProfileTagSelector";
+import { COMMON_INTERESTS, COMMON_SKILLS } from "../../data/profileOptions";
 
 type PanelTab = "overview" | "growth" | "roles";
 
@@ -33,17 +35,21 @@ export const YouthKnowledgePage: React.FC = () => {
   const [activeSector, setActiveSector] = useState("All sectors");
   const [activeTab, setActiveTab] = useState<PanelTab>("overview");
   const [panelOpen, setPanelOpen] = useState(true);
-  const [skillDraft, setSkillDraft] = useState("");
+  const [currentSkills, setCurrentSkills] = useState<string[]>([]);
+  const [currentInterests, setCurrentInterests] = useState<string[]>([]);
   const [savingSkills, setSavingSkills] = useState(false);
+  const [savingInterests, setSavingInterests] = useState(false);
   const [skillError, setSkillError] = useState<string | null>(null);
+  const [interestError, setInterestError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    profilesApi
-      .getMyKnowledgeGraph()
-      .then((data) => {
+    Promise.all([profilesApi.getMyKnowledgeGraph(), profilesApi.getMyProfile()])
+      .then(([data, profile]) => {
         setGraph(data);
+        setCurrentSkills(profile.skills || []);
+        setCurrentInterests(profile.interests || []);
         setSelectedNode(
           data.nodes.find((node) => node.status === "frontier") ?? data.nodes[0] ?? null,
         );
@@ -59,10 +65,17 @@ export const YouthKnowledgePage: React.FC = () => {
       roles = roles.filter((role) => role.sector === activeSector);
     }
     if (selectedNode) {
-      const selected = selectedNode.label.toLowerCase();
+      const connectedSkillLabels = selectedNode.kind === "interest"
+        ? graph.edges
+            .filter((edge) => edge.source === selectedNode.id || edge.target === selectedNode.id)
+            .map((edge) => edge.source === selectedNode.id ? edge.target : edge.source)
+            .map((nodeId) => graph.nodes.find((node) => node.id === nodeId))
+            .filter((node): node is KnowledgeGraphNode => Boolean(node?.kind === "skill"))
+            .map((node) => node.label.toLowerCase())
+        : [selectedNode.label.toLowerCase()];
       const related = roles.filter((role) =>
         [...role.matched_skills, ...role.missing_skills].some(
-          (skill) => skill.toLowerCase() === selected,
+          (skill) => connectedSkillLabels.includes(skill.toLowerCase()),
         ),
       );
       if (related.length) return related;
@@ -75,27 +88,21 @@ export const YouthKnowledgePage: React.FC = () => {
     setPanelOpen(true);
   };
 
-  const currentSkills = graph?.nodes
-    .filter((node) => node.status === "current")
-    .map((node) => node.label) ?? [];
-  const skillOptions = [...COMMON_SKILLS, ...currentSkills].filter(
-    (skill, index, allSkills) =>
-      allSkills.findIndex((candidate) => candidate.toLowerCase() === skill.toLowerCase()) === index,
-  );
-
   const saveSkills = async (nextSkills: string[], preferredSkill?: string) => {
     if (!graph || savingSkills) return;
     setSavingSkills(true);
     setSkillError(null);
 
     try {
-      await profilesApi.updateMyProfile({ skills: nextSkills });
+      const updatedProfile = await profilesApi.updateMyProfile({ skills: nextSkills });
+      setCurrentSkills(updatedProfile.skills ?? nextSkills);
       const updatedGraph = await profilesApi.getMyKnowledgeGraph();
       setGraph(updatedGraph);
 
       const preferred = preferredSkill
         ? updatedGraph.nodes.find(
-            (node) => node.label.toLowerCase() === preferredSkill.toLowerCase(),
+            (node) => node.kind === "skill"
+              && node.label.toLowerCase() === preferredSkill.toLowerCase(),
           )
         : undefined;
       const retained = selectedNode
@@ -119,17 +126,43 @@ export const YouthKnowledgePage: React.FC = () => {
     const trimmed = skill.trim();
     if (!trimmed) return;
     if (currentSkills.some((current) => current.toLowerCase() === trimmed.toLowerCase())) {
-      setSkillDraft("");
       return;
     }
-    setSkillDraft("");
     void saveSkills([...currentSkills, trimmed], trimmed);
   };
 
-  const removeSkill = (skill: string) => {
-    void saveSkills(
-      currentSkills.filter((current) => current.toLowerCase() !== skill.toLowerCase()),
-    );
+  const saveInterests = async (nextInterests: string[], preferredInterest?: string) => {
+    if (!graph || savingInterests) return;
+    setSavingInterests(true);
+    setInterestError(null);
+
+    try {
+      const updatedProfile = await profilesApi.updateMyProfile({ interests: nextInterests });
+      setCurrentInterests(updatedProfile.interests ?? nextInterests);
+      const updatedGraph = await profilesApi.getMyKnowledgeGraph();
+      setGraph(updatedGraph);
+
+      const preferred = preferredInterest
+        ? updatedGraph.nodes.find(
+            (node) => node.kind === "interest"
+              && node.label.toLowerCase() === preferredInterest.toLowerCase(),
+          )
+        : undefined;
+      const retained = selectedNode
+        ? updatedGraph.nodes.find((node) => node.id === selectedNode.id)
+        : undefined;
+      setSelectedNode(
+        preferred
+        ?? retained
+        ?? updatedGraph.nodes.find((node) => node.status === "frontier")
+        ?? updatedGraph.nodes[0]
+        ?? null,
+      );
+    } catch (err: any) {
+      setInterestError(err.message || "Could not update your interests.");
+    } finally {
+      setSavingInterests(false);
+    }
   };
 
   if (loading) {
@@ -196,7 +229,7 @@ export const YouthKnowledgePage: React.FC = () => {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h1 className="text-xs font-bold uppercase text-emerald-700">Knowledge frontier</h1>
-                <p className="mt-0.5 text-sm font-semibold text-slate-900">{graph.stats.current_skills} skills · {graph.stats.frontier_skills} next steps · {graph.stats.roles_in_reach} roles</p>
+                <p className="mt-0.5 text-sm font-semibold text-slate-900">{graph.stats.current_skills} skills · {graph.stats.current_interests} interests · {graph.stats.frontier_skills} next steps</p>
               </div>
               <button
                 type="button"
@@ -211,18 +244,18 @@ export const YouthKnowledgePage: React.FC = () => {
 
             {selectedNode && (
               <div className="mt-4 flex items-start gap-3">
-                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${selectedNode.status === "frontier" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
-                  {selectedNode.status === "frontier" ? <Target className="h-5 w-5" /> : <Check className="h-5 w-5" />}
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${selectedNode.kind === "interest" ? "bg-teal-100 text-teal-700" : selectedNode.status === "frontier" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                  {selectedNode.kind === "interest" ? <Heart className="h-5 w-5" /> : selectedNode.status === "frontier" ? <Target className="h-5 w-5" /> : <Check className="h-5 w-5" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <h2 className="truncate text-lg font-bold text-slate-950">{selectedNode.label}</h2>
-                    <span className={`shrink-0 text-[10px] font-bold uppercase ${selectedNode.status === "frontier" ? "text-amber-700" : "text-emerald-700"}`}>
-                      {selectedNode.status}
+                    <span className={`shrink-0 text-[10px] font-bold uppercase ${selectedNode.kind === "interest" ? "text-teal-700" : selectedNode.status === "frontier" ? "text-amber-700" : "text-emerald-700"}`}>
+                      {selectedNode.kind === "interest" ? "interest" : selectedNode.status}
                     </span>
                   </div>
                   <p className="mt-1 text-xs leading-5 text-slate-600">{selectedNode.reason}</p>
-                  {selectedNode.status === "frontier" && (
+                  {selectedNode.kind === "skill" && selectedNode.status === "frontier" && (
                     <button
                       type="button"
                       onClick={() => addSkill(selectedNode.label)}
@@ -264,8 +297,8 @@ export const YouthKnowledgePage: React.FC = () => {
                 <section className="grid grid-cols-2 gap-px bg-slate-200">
                   {[
                     [graph.stats.current_skills, "Skills mapped"],
+                    [graph.stats.current_interests, "Interests mapped"],
                     [graph.stats.frontier_skills, "Frontier skills"],
-                    [graph.stats.sectors_in_reach, "Relevant sectors"],
                     [graph.stats.roles_in_reach, "Open roles"],
                   ].map(([value, label]) => (
                     <div key={String(label)} className="bg-white px-5 py-3">
@@ -311,70 +344,39 @@ export const YouthKnowledgePage: React.FC = () => {
                 <section className="p-5">
                   <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
                     <Sparkles className="h-4 w-4 text-emerald-600" />
-                    Skills
+                    Skills & Interests
                   </h3>
 
                   <div className="mt-4">
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-700">
-                      Skills:
-                    </label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {skillOptions.map((skill) => {
-                        const selected = currentSkills.some(
-                          (current) => current.toLowerCase() === skill.toLowerCase(),
-                        );
-                        return (
-                          <button
-                            key={skill}
-                            type="button"
-                            onClick={() => selected ? removeSkill(skill) : addSkill(skill)}
-                            disabled={savingSkills}
-                            className={`cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-all disabled:cursor-wait disabled:opacity-50 ${
-                              selected
-                                ? "bg-emerald-700 text-white shadow-2xs"
-                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                            }`}
-                            aria-pressed={selected}
-                          >
-                            {skill}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <ProfileTagSelector
+                      id="knowledge-skill-input"
+                      label="Skills"
+                      options={COMMON_SKILLS}
+                      values={currentSkills}
+                      placeholder="Add a skill"
+                      busy={savingSkills}
+                      error={skillError}
+                      onChange={(values, addedValue) => {
+                        void saveSkills(values, addedValue);
+                      }}
+                    />
                   </div>
 
-                  <form
-                    className="mt-4 flex gap-2"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      addSkill(skillDraft);
-                    }}
-                  >
-                    <label htmlFor="knowledge-skill-input" className="sr-only">Add a skill</label>
-                    <input
-                      id="knowledge-skill-input"
-                      type="text"
-                      value={skillDraft}
-                      onChange={(event) => setSkillDraft(event.target.value)}
-                      disabled={savingSkills}
-                      placeholder="Add a skill"
-                      autoComplete="off"
-                      className="uk-focus-ring min-w-0 flex-1 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white disabled:opacity-60"
+                  <div className="mt-5 border-t border-slate-100 pt-5">
+                    <ProfileTagSelector
+                      id="knowledge-interest-input"
+                      label="Interests"
+                      options={COMMON_INTERESTS}
+                      values={currentInterests}
+                      placeholder="Add an interest"
+                      tone="teal"
+                      busy={savingInterests}
+                      error={interestError}
+                      onChange={(values, addedValue) => {
+                        void saveInterests(values, addedValue);
+                      }}
                     />
-                    <button
-                      type="submit"
-                      disabled={savingSkills || !skillDraft.trim()}
-                      className="uk-focus-ring flex shrink-0 cursor-pointer items-center gap-1 rounded-xl bg-slate-800 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
-                      aria-label="Add skill"
-                    >
-                      {savingSkills ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-                      <span>Add</span>
-                    </button>
-                  </form>
-
-                  {skillError && (
-                    <p className="mt-3 text-xs font-medium text-rose-700" role="alert">{skillError}</p>
-                  )}
+                  </div>
                 </section>
               </div>
             )}
@@ -397,7 +399,7 @@ export const YouthKnowledgePage: React.FC = () => {
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-800">{index + 1}</span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-bold text-slate-900">{node.label}</span>
-                        <span className="mt-0.5 block truncate text-xs text-slate-500">{node.sector} · {node.opportunity_count} roles</span>
+                        <span className="mt-0.5 block truncate text-xs text-slate-500">{node.category} · {node.opportunity_count} roles</span>
                       </span>
                       <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
                     </button>
