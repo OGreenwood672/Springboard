@@ -15,6 +15,10 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
+  GitBranchPlus,
+  LoaderCircle,
+} from "lucide-react";
+import {
   KnowledgeGraphEdge,
   KnowledgeGraphNode,
 } from "@springboard/shared-types";
@@ -24,12 +28,16 @@ interface Props {
   edges: KnowledgeGraphEdge[];
   selectedNodeId?: string;
   activeSector?: string;
+  expandingNodeId?: string;
   onSelect: (node: KnowledgeGraphNode) => void;
+  onExpand: (node: KnowledgeGraphNode) => void;
 }
 
 interface SkillNodeData extends Record<string, unknown> {
   skill: KnowledgeGraphNode;
   dimmed: boolean;
+  expanding: boolean;
+  onExpand: (node: KnowledgeGraphNode) => void;
 }
 
 type SkillFlowNode = Node<SkillNodeData, "skill">;
@@ -39,7 +47,12 @@ const NODE_HEIGHT = 76;
 const CENTER_X = 600;
 const CENTER_Y = 440;
 
-function placeNodes(nodes: KnowledgeGraphNode[], activeSector?: string): SkillFlowNode[] {
+function placeNodes(
+  nodes: KnowledgeGraphNode[],
+  activeSector: string | undefined,
+  expandingNodeId: string | undefined,
+  onExpand: (node: KnowledgeGraphNode) => void,
+): SkillFlowNode[] {
   const current = nodes.filter((node) => node.kind === "skill" && node.status === "current");
   const interests = nodes.filter((node) => node.kind === "interest");
   const frontier = nodes.filter((node) => node.kind === "skill" && node.status === "frontier");
@@ -61,7 +74,12 @@ function placeNodes(nodes: KnowledgeGraphNode[], activeSector?: string): SkillFl
           x: CENTER_X + Math.cos(angle) * radiusX - NODE_WIDTH / 2,
           y: CENTER_Y + Math.sin(angle) * radiusY - NODE_HEIGHT / 2,
         },
-        data: { skill, dimmed: isDimmed(skill) },
+        data: {
+          skill,
+          dimmed: isDimmed(skill),
+          expanding: skill.id === expandingNodeId,
+          onExpand,
+        },
         width: NODE_WIDTH,
         height: NODE_HEIGHT,
         ariaLabel: `${skill.label}, ${skill.kind === "interest" ? "interest" : `${skill.status} skill`}`,
@@ -86,13 +104,13 @@ const handleStyle = {
 };
 
 const SkillNode = memo(({ data, selected }: NodeProps<SkillFlowNode>) => {
-  const { skill, dimmed } = data;
+  const { skill, dimmed, expanding, onExpand } = data;
   const current = skill.status === "current";
   const interest = skill.kind === "interest";
 
   return (
     <div
-      className={`skill-graph-node h-[76px] w-[174px] rounded-lg border px-3.5 py-3 shadow-sm transition-[opacity,box-shadow,border-color] ${
+      className={`group skill-graph-node relative h-[76px] w-[174px] rounded-lg border px-3.5 py-3 shadow-sm transition-[opacity,box-shadow,border-color] ${
         interest
           ? "border-teal-700 bg-teal-700 text-white"
           : current
@@ -135,6 +153,21 @@ const SkillNode = memo(({ data, selected }: NodeProps<SkillFlowNode>) => {
       <p className={`mt-0.5 truncate text-[10px] font-medium ${interest ? "text-teal-50" : current ? "text-emerald-100" : "text-slate-500"}`} title={skill.category}>
         {skill.category}
       </p>
+      <button
+        type="button"
+        className="nodrag nopan uk-focus-ring absolute left-1/2 top-[calc(100%+6px)] z-20 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[10px] font-bold text-slate-800 opacity-0 shadow-md transition-opacity hover:bg-slate-50 focus:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 disabled:cursor-wait disabled:opacity-100"
+        onClick={(event) => {
+          event.stopPropagation();
+          onExpand(skill);
+        }}
+        disabled={expanding}
+        aria-label={`Expand frontier from ${skill.label}`}
+      >
+        {expanding
+          ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+          : <GitBranchPlus className="h-3.5 w-3.5" />}
+        Expand frontier
+      </button>
     </div>
   );
 });
@@ -170,20 +203,25 @@ const GraphViewport: React.FC<Props> = ({
   edges,
   selectedNodeId,
   activeSector,
+  expandingNodeId,
   onSelect,
+  onExpand,
 }) => {
-  const initialNodes = useMemo(() => placeNodes(nodes, activeSector), [nodes]);
+  const initialNodes = useMemo(
+    () => placeNodes(nodes, activeSector, expandingNodeId, onExpand),
+    [nodes, activeSector, expandingNodeId, onExpand],
+  );
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<SkillFlowNode>(initialNodes);
   const { setCenter } = useReactFlow<SkillFlowNode>();
 
   useEffect(() => {
     setFlowNodes(
-      placeNodes(nodes, activeSector).map((node) => ({
+      placeNodes(nodes, activeSector, expandingNodeId, onExpand).map((node) => ({
         ...node,
         selected: node.id === selectedNodeId,
       })),
     );
-  }, [nodes, setFlowNodes]);
+  }, [nodes, activeSector, expandingNodeId, onExpand, selectedNodeId, setFlowNodes]);
 
   useEffect(() => {
     setFlowNodes((currentNodes) =>

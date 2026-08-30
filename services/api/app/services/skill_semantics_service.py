@@ -12,6 +12,7 @@ from app.models.skill import Skill, SkillAlias, SkillCategory, SkillRelationship
 
 logger = logging.getLogger("uvicorn.error")
 SKILL_TAXONOMY_VERSION = "intrinsic-taxonomy-v2"
+SKILL_EMBEDDING_VERSION = "skill-description-v2"
 
 RelationshipType = Literal[
     "related_to",
@@ -43,6 +44,14 @@ class SkillInference(BaseModel):
     relationships: list[InferredRelationship] = Field(default_factory=list)
 
 
+class ExpansionSuggestion(BaseModel):
+    canonical_name: str
+    description: str
+    category: str
+    confidence: float = Field(ge=0, le=1)
+    reason: str
+
+
 class SemanticProvider(Protocol):
     model_name: str
     embedding_model: str
@@ -55,6 +64,15 @@ class SemanticProvider(Protocol):
     ) -> list[SkillInference]: ...
 
     def embed(self, texts: list[str]) -> list[list[float]]: ...
+
+    def expand_concept(
+        self,
+        concept_name: str,
+        concept_description: str,
+        concept_kind: str,
+        catalogue_names: list[str],
+        limit: int,
+    ) -> list[ExpansionSuggestion]: ...
 
 
 class GeminiSemanticProvider:
@@ -102,7 +120,9 @@ relationships, but it must not determine the intrinsic skill category.
         )
         if response.parsed is not None:
             return [
-                item if isinstance(item, SkillInference) else SkillInference.model_validate(item)
+                item
+                if isinstance(item, SkillInference)
+                else SkillInference.model_validate(item)
                 for item in response.parsed
             ]
         return []
@@ -122,9 +142,54 @@ relationships, but it must not determine the intrinsic skill category.
         )
         return [_unit_vector(list(item.values)) for item in response.embeddings]
 
+    def expand_concept(
+        self,
+        concept_name: str,
+        concept_description: str,
+        concept_kind: str,
+        catalogue_names: list[str],
+        limit: int,
+    ) -> list[ExpansionSuggestion]:
+        from google.genai import types
+
+        prompt = f"""
+Expand one {concept_kind} in a UK youth employment knowledge graph into {limit}
+specific, practical skills or narrower knowledge areas a learner could develop next.
+Suggestions must be genuine specialisations or concrete next steps from the source,
+not synonyms, generic soft skills, sectors, jobs, or unrelated adjacent concepts.
+Prefer useful distinctions that make the learner's frontier more precise. Do not
+repeat a name already in the catalogue. Classify each suggestion by its intrinsic,
+cross-sector capability type. Give a concise reason tied directly to the source and
+use confidence conservatively.
+
+Source: {concept_name}
+Source description: {concept_description}
+Existing catalogue names: {catalogue_names}
+""".strip()
+        response = self.client.models.generate_content(
+            model=self.model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=list[ExpansionSuggestion],
+                temperature=0.2,
+            ),
+        )
+        if response.parsed is None:
+            return []
+        return [
+            item
+            if isinstance(item, ExpansionSuggestion)
+            else ExpansionSuggestion.model_validate(item)
+            for item in response.parsed
+        ][:limit]
+
 
 def get_semantic_provider() -> SemanticProvider | None:
-    if not settings.SEMANTIC_SKILLS_ENABLED or not (settings.GEMINI_API_KEY or "").strip():
+    if (
+        not settings.SEMANTIC_SKILLS_ENABLED
+        or not (settings.GEMINI_API_KEY or "").strip()
+    ):
         return None
     try:
         return GeminiSemanticProvider()
@@ -145,7 +210,11 @@ def cosine_similarity(left: list[float], right: list[float]) -> float:
 
 
 def _title(value: str) -> str:
-    return value.strip() if any(char.isupper() for char in value) else value.strip().title()
+    return (
+        value.strip()
+        if any(char.isupper() for char in value)
+        else value.strip().title()
+    )
 
 
 class SkillCatalogueService:
@@ -189,7 +258,9 @@ class SkillCatalogueService:
             for normalized in raw_by_normalized
         }
         self._resolve_embedding_aliases(raw_by_normalized, resolved, skills)
-        unresolved = [raw_by_normalized[key] for key, value in resolved.items() if value is None]
+        unresolved = [
+            raw_by_normalized[key] for key, value in resolved.items() if value is None
+        ]
         needs_enrichment = list(unresolved)
         seen_skill_ids = set()
         for normalized, skill in resolved.items():
@@ -208,10 +279,15 @@ class SkillCatalogueService:
             try:
                 inferred = self.provider.infer_skills(
                     needs_enrichment,
-                    sorted({skill.canonical_name for skill in skills} | set(needs_enrichment)),
+                    sorted(
+                        {skill.canonical_name for skill in skills}
+                        | set(needs_enrichment)
+                    ),
                     sector_hints or {},
                 )
-                inference_by_input = {normalize_skill(item.input_name): item for item in inferred}
+                inference_by_input = {
+                    normalize_skill(item.input_name): item for item in inferred
+                }
             except Exception as exc:
                 logger.warning("Semantic skill classification failed: %s", exc)
 
@@ -226,9 +302,13 @@ class SkillCatalogueService:
                         for relation in inference.relationships
                     )
                 continue
-            canonical_name = (inference.canonical_name.strip() if inference else raw) or raw
+            canonical_name = (
+                inference.canonical_name.strip() if inference else raw
+            ) or raw
             canonical_normalized = normalize_skill(canonical_name)
-            skill = by_name.get(canonical_normalized) or by_alias.get(canonical_normalized)
+            skill = by_name.get(canonical_normalized) or by_alias.get(
+                canonical_normalized
+            )
             if skill is None:
                 skill = Skill(
                     canonical_name=_title(canonical_name),
@@ -243,8 +323,15 @@ class SkillCatalogueService:
                 skills.append(skill)
             if inference:
                 self._apply_inference(skill, inference)
-                pending_relationships.extend((skill, relation) for relation in inference.relationships)
-            self._add_alias(skill, raw, "model" if inference else "exact", 0.95 if inference else 1.0)
+                pending_relationships.extend(
+                    (skill, relation) for relation in inference.relationships
+                )
+            self._add_alias(
+                skill,
+                raw,
+                "model" if inference else "exact",
+                0.95 if inference else 1.0,
+            )
             resolved[normalized] = skill
 
         self.db.flush()
@@ -255,21 +342,109 @@ class SkillCatalogueService:
         self.db.commit()
         return resolved
 
+    def expand_skill(
+        self,
+        source: Skill,
+        concept_kind: str,
+        limit: int = 5,
+    ) -> list[tuple[Skill, ExpansionSuggestion]]:
+        if not self.provider or not hasattr(self.provider, "expand_concept"):
+            return []
+        catalogue = self.db.query(Skill).all()
+        suggestions = self.provider.expand_concept(
+            source.canonical_name,
+            source.description or "",
+            concept_kind,
+            sorted(skill.canonical_name for skill in catalogue),
+            limit,
+        )
+        expanded: list[tuple[Skill, ExpansionSuggestion]] = []
+        seen_names: set[str] = set()
+        for suggestion in suggestions:
+            normalized = normalize_skill(suggestion.canonical_name)
+            if (
+                not normalized
+                or normalized == source.normalized_name
+                or normalized in seen_names
+                or suggestion.confidence
+                < settings.SEMANTIC_MODEL_RELATIONSHIP_THRESHOLD
+            ):
+                continue
+            seen_names.add(normalized)
+            skill = (
+                self.db.query(Skill)
+                .filter(Skill.normalized_name == normalized)
+                .first()
+            )
+            if skill is None:
+                skill = Skill(
+                    canonical_name=_title(suggestion.canonical_name),
+                    normalized_name=normalized,
+                    provenance="model",
+                    model_version=self._classification_version(),
+                )
+                self.db.add(skill)
+                self.db.flush()
+                self._apply_inference(
+                    skill,
+                    SkillInference(
+                        input_name=suggestion.canonical_name,
+                        canonical_name=suggestion.canonical_name,
+                        description=suggestion.description,
+                        category=suggestion.category,
+                    ),
+                )
+
+            relationship = (
+                self.db.query(SkillRelationship)
+                .filter(
+                    SkillRelationship.source_skill_id == source.id,
+                    SkillRelationship.target_skill_id == skill.id,
+                    SkillRelationship.relationship_type == "builds_on",
+                    SkillRelationship.provenance == "model",
+                )
+                .first()
+            )
+            if relationship is None:
+                relationship = SkillRelationship(
+                    source_skill_id=source.id,
+                    target_skill_id=skill.id,
+                    relationship_type="builds_on",
+                    provenance="model",
+                )
+                self.db.add(relationship)
+            relationship.weight = suggestion.confidence
+            relationship.confidence = suggestion.confidence
+            relationship.evidence = suggestion.reason
+            relationship.model_version = self.provider.model_name
+            expanded.append((skill, suggestion))
+
+        self.db.commit()
+        return expanded
+
     def _resolve_embedding_aliases(
         self,
         raw_by_normalized: dict[str, str],
         resolved: dict[str, Skill | None],
         skills: list[Skill],
     ) -> None:
-        candidates = [skill for skill in skills if skill.embedding]
+        embedding_version = (
+            f"{self.provider.embedding_model}:{SKILL_EMBEDDING_VERSION}"
+            if self.provider
+            else None
+        )
+        candidates = [
+            skill
+            for skill in skills
+            if skill.embedding and skill.embedding_model == embedding_version
+        ]
         unresolved_keys = [key for key, skill in resolved.items() if skill is None]
         if not self.provider or not candidates or not unresolved_keys:
             return
         try:
-            vectors = self.provider.embed([
-                f"Skill: {raw_by_normalized[key]}"
-                for key in unresolved_keys
-            ])
+            vectors = self.provider.embed(
+                [raw_by_normalized[key] for key in unresolved_keys]
+            )
             if len(vectors) != len(unresolved_keys):
                 return
             for normalized, vector in zip(unresolved_keys, vectors):
@@ -297,7 +472,11 @@ class SkillCatalogueService:
         skill.model_version = self._classification_version()
         category_name = inference.category.strip()
         if category_name:
-            category = self.db.query(SkillCategory).filter(SkillCategory.name == category_name).first()
+            category = (
+                self.db.query(SkillCategory)
+                .filter(SkillCategory.name == category_name)
+                .first()
+            )
             if category is None:
                 category = SkillCategory(
                     name=category_name,
@@ -310,19 +489,27 @@ class SkillCatalogueService:
         for alias in inference.aliases:
             self._add_alias(skill, alias, "model", 0.9)
 
-    def _add_alias(self, skill: Skill, alias: str, provenance: str, confidence: float) -> None:
+    def _add_alias(
+        self, skill: Skill, alias: str, provenance: str, confidence: float
+    ) -> None:
         normalized = normalize_skill(alias)
         if not normalized or normalized == skill.normalized_name:
             return
-        existing = self.db.query(SkillAlias).filter(SkillAlias.normalized_alias == normalized).first()
+        existing = (
+            self.db.query(SkillAlias)
+            .filter(SkillAlias.normalized_alias == normalized)
+            .first()
+        )
         if existing is None:
-            self.db.add(SkillAlias(
-                skill_id=skill.id,
-                alias=alias.strip(),
-                normalized_alias=normalized,
-                confidence=confidence,
-                provenance=provenance,
-            ))
+            self.db.add(
+                SkillAlias(
+                    skill_id=skill.id,
+                    alias=alias.strip(),
+                    normalized_alias=normalized,
+                    confidence=confidence,
+                    provenance=provenance,
+                )
+            )
 
     def _add_inferred_relationships(
         self,
@@ -340,39 +527,56 @@ class SkillCatalogueService:
             target = by_normalized.get(normalize_skill(relation.target))
             if target is None or target.id == source.id:
                 continue
-            existing = self.db.query(SkillRelationship).filter(
-                SkillRelationship.source_skill_id == source.id,
-                SkillRelationship.target_skill_id == target.id,
-                SkillRelationship.relationship_type == relation.relationship_type,
-                SkillRelationship.provenance == "model",
-            ).first()
+            existing = (
+                self.db.query(SkillRelationship)
+                .filter(
+                    SkillRelationship.source_skill_id == source.id,
+                    SkillRelationship.target_skill_id == target.id,
+                    SkillRelationship.relationship_type == relation.relationship_type,
+                    SkillRelationship.provenance == "model",
+                )
+                .first()
+            )
             if existing is None:
-                self.db.add(SkillRelationship(
-                    source_skill_id=source.id,
-                    target_skill_id=target.id,
-                    relationship_type=relation.relationship_type,
-                    weight=relation.confidence,
-                    confidence=relation.confidence,
-                    provenance="model",
-                    evidence=relation.reason,
-                    model_version=self.provider.model_name if self.provider else None,
-                ))
+                self.db.add(
+                    SkillRelationship(
+                        source_skill_id=source.id,
+                        target_skill_id=target.id,
+                        relationship_type=relation.relationship_type,
+                        weight=relation.confidence,
+                        confidence=relation.confidence,
+                        provenance="model",
+                        evidence=relation.reason,
+                        model_version=self.provider.model_name
+                        if self.provider
+                        else None,
+                    )
+                )
 
     def _embed_missing(self, skills: list[Skill]) -> None:
-        missing = [skill for skill in skills if not skill.embedding]
-        if not self.provider or not missing:
+        if not self.provider:
+            return
+        embedding_version = f"{self.provider.embedding_model}:{SKILL_EMBEDDING_VERSION}"
+        missing = [
+            skill
+            for skill in skills
+            if not skill.embedding or skill.embedding_model != embedding_version
+        ]
+        if not missing:
             return
         try:
             texts = [
-                f"Skill: {skill.canonical_name}. {skill.description or ''}".strip()
+                f"{skill.canonical_name}. {skill.description or ''}".strip()
                 for skill in missing
             ]
             embeddings = self.provider.embed(texts)
             if len(embeddings) != len(missing):
-                raise ValueError("Embedding provider returned an unexpected number of vectors")
+                raise ValueError(
+                    "Embedding provider returned an unexpected number of vectors"
+                )
             for skill, embedding in zip(missing, embeddings):
                 skill.embedding = embedding
-                skill.embedding_model = self.provider.embedding_model
+                skill.embedding_model = embedding_version
         except Exception as exc:
             logger.warning("Semantic skill embedding failed: %s", exc)
 
@@ -385,14 +589,18 @@ class SkillCatalogueService:
             for (category_id,) in self.db.query(Skill.category_id).distinct().all()
             if category_id is not None
         }
-        categories = self.db.query(SkillCategory).filter(
-            SkillCategory.id.in_(used_category_ids),
-            (
-                (SkillCategory.embedding.is_(None))
-                | (SkillCategory.embedding_model.is_(None))
-                | (SkillCategory.embedding_model != embedding_version)
-            ),
-        ).all()
+        categories = (
+            self.db.query(SkillCategory)
+            .filter(
+                SkillCategory.id.in_(used_category_ids),
+                (
+                    (SkillCategory.embedding.is_(None))
+                    | (SkillCategory.embedding_model.is_(None))
+                    | (SkillCategory.embedding_model != embedding_version)
+                ),
+            )
+            .all()
+        )
         if not categories:
             return
         try:
@@ -407,22 +615,32 @@ class SkillCatalogueService:
 
     def _add_embedding_relationships(self, skills: list[Skill]) -> None:
         embedded = [skill for skill in skills if skill.embedding]
-        existing_pairs = {
-            (relationship.source_skill_id, relationship.target_skill_id)
+        existing_by_pair = {
+            frozenset((relationship.source_skill_id, relationship.target_skill_id)): relationship
             for relationship in self.db.query(SkillRelationship)
             .filter(SkillRelationship.provenance == "embedding")
             .all()
         }
         for index, source in enumerate(embedded):
-            for target in embedded[index + 1:]:
+            for target in embedded[index + 1 :]:
                 similarity = cosine_similarity(source.embedding, target.embedding)
+                pair_key = frozenset((source.id, target.id))
+                existing = existing_by_pair.get(pair_key)
                 if similarity < settings.SEMANTIC_RELATIONSHIP_THRESHOLD:
+                    if existing is not None:
+                        self.db.delete(existing)
                     continue
-                first, second = sorted((source, target), key=lambda skill: str(skill.id))
-                pair = (first.id, second.id)
-                if pair in existing_pairs:
+                first, second = sorted(
+                    (source, target), key=lambda skill: str(skill.id)
+                )
+                if existing is not None:
+                    existing.source_skill_id = first.id
+                    existing.target_skill_id = second.id
+                    existing.weight = similarity
+                    existing.confidence = similarity
+                    existing.model_version = source.embedding_model
                     continue
-                self.db.add(SkillRelationship(
+                relationship = SkillRelationship(
                     source_skill_id=first.id,
                     target_skill_id=second.id,
                     relationship_type="related_to",
@@ -431,22 +649,79 @@ class SkillCatalogueService:
                     provenance="embedding",
                     evidence="Cosine similarity between stored semantic embeddings.",
                     model_version=source.embedding_model,
-                ))
-                existing_pairs.add(pair)
+                )
+                self.db.add(relationship)
+                existing_by_pair[pair_key] = relationship
 
 
-def semantic_relationships_by_name(db: Session) -> dict[tuple[str, str], SkillRelationship]:
-    skills = {skill.id: skill for skill in db.query(Skill).all()}
-    result: dict[tuple[str, str], SkillRelationship] = {}
+def semantic_relationships_by_name(
+    db: Session,
+) -> dict[tuple[str, str], SkillRelationship]:
+    skill_list = db.query(Skill).all()
+    skills = {skill.id: skill for skill in skill_list}
+    evidence: dict[tuple[str, str], list[SkillRelationship]] = {}
     for relationship in db.query(SkillRelationship).all():
         source = skills.get(relationship.source_skill_id)
         target = skills.get(relationship.target_skill_id)
         if source is None or target is None:
             continue
         pair = tuple(sorted((source.normalized_name, target.normalized_name)))
-        current = result.get(pair)
-        if current is None or relationship.confidence > current.confidence:
-            result[pair] = relationship
+        evidence.setdefault(pair, []).append(relationship)
+
+    neighbour_count = max(settings.SEMANTIC_EMBEDDING_NEIGHBOURS, 1)
+    neighbours: dict[str, set[str]] = {}
+    for source in skill_list:
+        if not source.embedding:
+            continue
+        ranked = sorted(
+            (
+                (target.normalized_name, cosine_similarity(source.embedding, target.embedding))
+                for target in skill_list
+                if target.id != source.id and target.embedding
+            ),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+        neighbours[source.normalized_name] = {
+            name for name, _score in ranked[:neighbour_count]
+        }
+
+    result: dict[tuple[str, str], SkillRelationship] = {}
+    for pair, relationships in evidence.items():
+        model_relationship = max(
+            (
+                relationship
+                for relationship in relationships
+                if relationship.provenance == "model"
+                and relationship.confidence
+                >= settings.SEMANTIC_MODEL_RELATIONSHIP_THRESHOLD
+            ),
+            key=lambda relationship: relationship.confidence,
+            default=None,
+        )
+        if model_relationship is not None:
+            result[pair] = model_relationship
+            continue
+
+        embedding_relationship = max(
+            (
+                relationship
+                for relationship in relationships
+                if relationship.provenance == "embedding"
+            ),
+            key=lambda relationship: relationship.confidence,
+            default=None,
+        )
+        if embedding_relationship is None:
+            continue
+
+        source, target = pair
+        source_near_target = target in neighbours.get(source, set())
+        target_near_source = source in neighbours.get(target, set())
+        mutual_neighbours = source_near_target and target_near_source
+        confidence = embedding_relationship.confidence
+        if mutual_neighbours and confidence >= settings.SEMANTIC_EMBEDDING_EDGE_THRESHOLD:
+            result[pair] = embedding_relationship
     return result
 
 
@@ -466,7 +741,9 @@ def semantic_relationship_evidence_by_name(
 
 
 def category_names_by_skill(db: Session) -> dict[str, str]:
-    categories = {category.id: category.name for category in db.query(SkillCategory).all()}
+    categories = {
+        category.id: category.name for category in db.query(SkillCategory).all()
+    }
     return {
         skill.normalized_name: categories[skill.category_id]
         for skill in db.query(Skill).all()
@@ -498,3 +775,44 @@ def category_embeddings_by_name(db: Session) -> dict[str, list[float]]:
         for category in db.query(SkillCategory).all()
         if category.id in used_category_ids and category.embedding
     }
+
+
+def category_equivalence_pairs(db: Session) -> set[tuple[str, str]]:
+    vectors = category_embeddings_by_name(db)
+    closest: dict[str, tuple[str, float]] = {}
+    for source_name, source_vector in vectors.items():
+        closest[source_name] = max(
+            (
+                (target_name, cosine_similarity(source_vector, target_vector))
+                for target_name, target_vector in vectors.items()
+                if target_name != source_name
+            ),
+            key=lambda item: item[1],
+            default=("", 0),
+        )
+
+    return {
+        tuple(sorted((source_name, target_name)))
+        for source_name, (target_name, similarity) in closest.items()
+        if target_name
+        and closest.get(target_name, ("", 0))[0] == source_name
+        and similarity >= settings.SEMANTIC_CATEGORY_THRESHOLD
+    }
+
+
+def refresh_semantic_embeddings() -> None:
+    from app.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        service = SkillCatalogueService(db)
+        skills = db.query(Skill).all()
+        service._embed_missing(skills)
+        service._embed_missing_categories()
+        service._add_embedding_relationships(skills)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.warning("Background semantic embedding refresh failed: %s", exc)
+    finally:
+        db.close()

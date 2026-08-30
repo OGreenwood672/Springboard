@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -41,6 +41,8 @@ export const YouthKnowledgePage: React.FC = () => {
   const [savingInterests, setSavingInterests] = useState(false);
   const [skillError, setSkillError] = useState<string | null>(null);
   const [interestError, setInterestError] = useState<string | null>(null);
+  const [expandingNodeId, setExpandingNodeId] = useState<string | null>(null);
+  const [expansionError, setExpansionError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,6 +89,39 @@ export const YouthKnowledgePage: React.FC = () => {
     setSelectedNode(node);
     setPanelOpen(true);
   };
+
+  const expandFrontier = useCallback(async (node: KnowledgeGraphNode) => {
+    if (expandingNodeId) return;
+    setExpandingNodeId(node.id);
+    setExpansionError(null);
+    try {
+      const expansion = await profilesApi.expandKnowledgeFrontier(node);
+      setGraph((current) => {
+        if (!current) return current;
+        const existingNodeIds = new Set(current.nodes.map((item) => item.id));
+        const addedNodes = expansion.nodes.filter((item) => !existingNodeIds.has(item.id));
+        const edgeKeys = new Set(
+          current.edges.map((edge) => `${edge.source}|${edge.target}|${edge.relationship}`),
+        );
+        const addedEdges = expansion.edges.filter(
+          (edge) => !edgeKeys.has(`${edge.source}|${edge.target}|${edge.relationship}`),
+        );
+        return {
+          ...current,
+          nodes: [...current.nodes, ...addedNodes],
+          edges: [...current.edges, ...addedEdges],
+          stats: {
+            ...current.stats,
+            frontier_skills: current.stats.frontier_skills + addedNodes.length,
+          },
+        };
+      });
+    } catch (err: any) {
+      setExpansionError(err.message || `Could not expand from ${node.label}.`);
+    } finally {
+      setExpandingNodeId(null);
+    }
+  }, [expandingNodeId]);
 
   const saveSkills = async (nextSkills: string[], preferredSkill?: string) => {
     if (!graph || savingSkills) return;
@@ -209,8 +244,25 @@ export const YouthKnowledgePage: React.FC = () => {
           edges={graph.edges}
           selectedNodeId={selectedNode?.id}
           activeSector={activeSector}
+          expandingNodeId={expandingNodeId ?? undefined}
           onSelect={selectNode}
+          onExpand={expandFrontier}
         />
+
+        {expansionError && (
+          <div role="alert" className="absolute bottom-4 left-4 z-20 flex max-w-sm items-start gap-2 rounded-md border border-red-200 bg-white px-3 py-2.5 text-xs font-medium text-red-700 shadow-md">
+            <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{expansionError}</span>
+            <button
+              type="button"
+              onClick={() => setExpansionError(null)}
+              className="uk-focus-ring ml-auto p-0.5 text-red-500 hover:text-red-800"
+              aria-label="Dismiss expansion error"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
 
         {!panelOpen && (
           <button

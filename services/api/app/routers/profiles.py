@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -10,8 +10,16 @@ from app.schemas.youth_profile import (
     YouthProfileUpdate,
     YouthProfileCreate,
 )
-from app.schemas.knowledge_graph import KnowledgeGraphOut
-from app.services.knowledge_graph_service import build_knowledge_graph
+from app.schemas.knowledge_graph import (
+    KnowledgeFrontierExpansionOut,
+    KnowledgeFrontierExpansionRequest,
+    KnowledgeGraphOut,
+)
+from app.services.knowledge_graph_service import (
+    build_knowledge_graph,
+    expand_knowledge_frontier,
+)
+from app.services.skill_semantics_service import refresh_semantic_embeddings
 from app.core.dependencies import require_youth_user
 from app.core.geo import geocode_uk_postcode, create_point_geom
 
@@ -31,6 +39,47 @@ def get_my_knowledge_graph(
             detail="Youth profile has not been created yet.",
         )
     return build_knowledge_graph(db, profile)
+
+
+@router.post(
+    "/me/knowledge-graph/expand",
+    response_model=KnowledgeFrontierExpansionOut,
+)
+def expand_my_knowledge_graph(
+    payload: KnowledgeFrontierExpansionRequest,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(require_youth_user),
+    db: Session = Depends(get_db),
+):
+    """Generate narrower skills and knowledge areas from a selected graph node."""
+    profile = db.query(YouthProfile).filter(
+        YouthProfile.user_id == current_user.id
+    ).first()
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Youth profile has not been created yet.",
+        )
+    try:
+        expansion = expand_knowledge_frontier(
+            db,
+            profile,
+            payload.node_id,
+            payload.label,
+            payload.kind,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    if not expansion["nodes"]:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No further semantic expansion is available for this node.",
+        )
+    background_tasks.add_task(refresh_semantic_embeddings)
+    return expansion
 
 
 @router.get("/me", response_model=YouthProfileOut)

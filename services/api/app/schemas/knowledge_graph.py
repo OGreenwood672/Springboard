@@ -56,3 +56,14 @@ class KnowledgeGraphOut(BaseModel):
     sectors: list[SectorRecommendation]
     opportunities: list[KnowledgeOpportunity]
     stats: KnowledgeGraphStats
+
+
+class KnowledgeFrontierExpansionRequest(BaseModel):
+    node_id: str
+    label: str
+    kind: Literal["skill", "interest"]
+
+
+class KnowledgeFrontierExpansionOut(BaseModel):
+    nodes: list[KnowledgeGraphNode]
+    edges: list[KnowledgeGraphEdge]

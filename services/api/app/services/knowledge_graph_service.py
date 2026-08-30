@@ -10,10 +10,8 @@ from app.models.skill import Skill
 from app.models.youth_profile import YouthProfile
 from app.services.skill_semantics_service import (
     SkillCatalogueService,
-    category_embeddings_by_name,
-    category_embeddings_by_skill,
+    category_equivalence_pairs,
     category_names_by_skill,
-    cosine_similarity,
     normalize_skill,
     semantic_relationship_evidence_by_name,
     semantic_relationships_by_name,
@@ -103,21 +101,7 @@ def build_knowledge_graph(db: Session, profile: YouthProfile) -> dict:
     semantic_relationships = semantic_relationships_by_name(db)
     relationship_evidence = semantic_relationship_evidence_by_name(db)
     semantic_categories = category_names_by_skill(db)
-    category_embeddings = category_embeddings_by_skill(db)
-    category_vectors = category_embeddings_by_name(db)
-
-    closest_category: dict[str, tuple[str, float]] = {}
-    for source_category, source_vector in category_vectors.items():
-        candidates = (
-            (target_category, cosine_similarity(source_vector, target_vector))
-            for target_category, target_vector in category_vectors.items()
-            if target_category != source_category
-        )
-        closest_category[source_category] = max(
-            candidates,
-            key=lambda item: item[1],
-            default=("", 0),
-        )
+    equivalent_categories = category_equivalence_pairs(db)
 
     def category_equivalence_score(source: str, target: str) -> float:
         source_category = semantic_categories.get(source)
@@ -126,18 +110,8 @@ def build_knowledge_graph(db: Session, profile: YouthProfile) -> dict:
             return 0
         if source_category == target_category:
             return 0.8
-        similarity = cosine_similarity(
-            category_embeddings.get(source, []),
-            category_embeddings.get(target, []),
-        )
-        source_match = closest_category.get(source_category, ("", 0))[0]
-        target_match = closest_category.get(target_category, ("", 0))[0]
-        if (
-            source_match == target_category
-            and target_match == source_category
-            and similarity >= settings.SEMANTIC_CATEGORY_THRESHOLD
-        ):
-            return similarity
+        if tuple(sorted((source_category, target_category))) in equivalent_categories:
+            return settings.SEMANTIC_CATEGORY_THRESHOLD
         return 0
 
     def interest_connection_score(source: str, target: str) -> float:
@@ -147,13 +121,17 @@ def build_knowledge_graph(db: Session, profile: YouthProfile) -> dict:
             (relationship.confidence for relationship in evidence if relationship.provenance == "model"),
             default=0,
         )
-        embedding = max(
-            (relationship.confidence for relationship in evidence if relationship.provenance == "embedding"),
-            default=0,
+        qualified = semantic_relationships.get(pair)
+        embedding = (
+            qualified.confidence
+            if qualified is not None and qualified.provenance == "embedding"
+            else 0
         )
         return max(
-            explicit + 0.15 if explicit >= 0.7 else 0,
-            embedding if embedding >= 0.84 else 0,
+            explicit + 0.15
+            if explicit >= settings.SEMANTIC_MODEL_RELATIONSHIP_THRESHOLD
+            else 0,
+            embedding,
             category_equivalence_score(source, target),
         )
 
@@ -329,3 +307,92 @@ def build_knowledge_graph(db: Session, profile: YouthProfile) -> dict:
             "roles_in_reach": len(opportunities),
         },
     }
+
+
+def expand_knowledge_frontier(
+    db: Session,
+    profile: YouthProfile,
+    source_node_id: str,
+    source_label: str,
+    source_kind: str,
+    limit: int = 5,
+) -> dict:
+    graph = build_knowledge_graph(db, profile)
+    source_node = next(
+        (node for node in graph["nodes"] if node["id"] == source_node_id),
+        None,
+    )
+    service = SkillCatalogueService(db)
+    source = (
+        db.query(Skill)
+        .filter(Skill.normalized_name == normalize_skill(source_label))
+        .first()
+    )
+    if (
+        source is None
+        or _node_id(source.normalized_name, "interest" if source_kind == "interest" else "skill")
+        != source_node_id
+    ):
+        raise ValueError("The selected concept could not be resolved.")
+    if source_node is None:
+        source_node = {
+            "id": source_node_id,
+            "label": source.canonical_name,
+            "kind": source_kind,
+        }
+
+    suggestions = service.expand_skill(source, source_kind, limit=limit)
+    existing_node_ids = {node["id"] for node in graph["nodes"]}
+    semantic_categories = category_names_by_skill(db)
+    opportunities = (
+        db.query(Opportunity)
+        .filter(Opportunity.status == "published")
+        .all()
+    )
+    nodes = []
+    edges = []
+    for skill, suggestion in suggestions:
+        node_id = _node_id(skill.normalized_name)
+        if node_id in existing_node_ids:
+            continue
+        matching_opportunities = [
+            opportunity
+            for opportunity in opportunities
+            if skill.normalized_name
+            in {
+                normalize_skill(raw_skill)
+                for raw_skill in (
+                    (opportunity.required_skills or [])
+                    + (opportunity.preferred_skills or [])
+                )
+            }
+        ]
+        sectors = sorted({
+            opportunity.business.organisation_type
+            if opportunity.business
+            else "Other"
+            for opportunity in matching_opportunities
+        })
+        nodes.append({
+            "id": node_id,
+            "label": skill.canonical_name,
+            "kind": "skill",
+            "status": "frontier",
+            "category": semantic_categories.get(
+                skill.normalized_name,
+                "Uncategorised",
+            ),
+            "sectors": sectors,
+            "demand": len(matching_opportunities),
+            "opportunity_count": len(matching_opportunities),
+            "reason": suggestion.reason,
+        })
+        edges.append({
+            "source": source_node_id,
+            "target": node_id,
+            "relationship": (
+                "interest_alignment" if source_kind == "interest" else "related"
+            ),
+        })
+        existing_node_ids.add(node_id)
+    return {"nodes": nodes, "edges": edges}

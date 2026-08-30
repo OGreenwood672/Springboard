@@ -76,6 +76,11 @@ export interface KnowledgeGraphEdge {
   relationship: "interest_alignment" | "related" | "used_together";
 }
 
+export interface KnowledgeFrontierExpansion {
+  nodes: KnowledgeGraphNode[];
+  edges: KnowledgeGraphEdge[];
+}
+
 export interface SectorRecommendation {
   name: string;
   fit_score: number;

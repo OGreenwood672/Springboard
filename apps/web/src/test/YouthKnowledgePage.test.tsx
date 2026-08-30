@@ -11,6 +11,7 @@ vi.mock("../api/profiles", () => ({
     getMyKnowledgeGraph: vi.fn(),
     getMyProfile: vi.fn(),
     updateMyProfile: vi.fn(),
+    expandKnowledgeFrontier: vi.fn(),
   },
 }));
 
@@ -94,6 +95,10 @@ describe("YouthKnowledgePage", () => {
       interests: ["Technology"],
     } as any);
     vi.mocked(profilesApi.updateMyProfile).mockResolvedValue({} as any);
+    vi.mocked(profilesApi.expandKnowledgeFrontier).mockResolvedValue({
+      nodes: [],
+      edges: [],
+    });
   });
 
   it("shows the frontier skill and its connected role", async () => {
@@ -181,6 +186,39 @@ describe("YouthKnowledgePage", () => {
         interests: ["Technology", "Environment"],
       });
       expect(environment).toHaveAttribute("aria-pressed", "true");
+    });
+  });
+
+  it("expands a hovered node with more specific frontier skills", async () => {
+    vi.mocked(profilesApi.expandKnowledgeFrontier).mockResolvedValue({
+      nodes: [{
+        id: "async-python",
+        label: "Asynchronous Python",
+        kind: "skill",
+        status: "frontier",
+        category: "Software Development",
+        sectors: [],
+        demand: 0,
+        opportunity_count: 0,
+        reason: "A more specific next step from Python.",
+      }],
+      edges: [{ source: "python", target: "async-python", relationship: "related" }],
+    });
+    render(
+      <MemoryRouter>
+        <YouthKnowledgePage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", {
+      name: "Expand frontier from Python",
+    }));
+
+    await waitFor(() => {
+      expect(profilesApi.expandKnowledgeFrontier).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "python", label: "Python", kind: "skill" }),
+      );
+      expect(screen.getAllByText("Asynchronous Python").length).toBeGreaterThan(0);
     });
   });
 });
