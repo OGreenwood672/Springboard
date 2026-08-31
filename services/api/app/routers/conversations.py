@@ -15,7 +15,7 @@ router = APIRouter(prefix="/conversations", tags=["Agent Conversations"])
 
 
 class CreateConversationPayload(BaseModel):
-    mode: str = Field(..., description="'youth' or 'business'")
+    mode: str = Field(..., description="'youth', 'business', or 'council'")
     title: Optional[str] = None
 
 

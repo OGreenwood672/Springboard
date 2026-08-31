@@ -15,7 +15,6 @@ def validate_uk_postcode(v: Optional[str]) -> Optional[str]:
     if v is None or not v.strip():
         return None
     cleaned = v.strip().upper()
-    # Accept inward + outward, or just outward area (e.g. HP5, SW1A)
     return cleaned
 
 
@@ -104,6 +103,39 @@ class ApplicationDraftSchema(BaseModel):
 
 
 # ==========================================
+# Council Policy & Wage Subsidy Schemas
+# ==========================================
+
+class WageSubsidyPledgeDraftSchema(BaseModel):
+    business_id: Optional[UUID] = None
+    business_name: Optional[str] = None
+    scheme_id: Optional[UUID] = None
+    hourly_subsidy: float = Field(default=4.50, gt=0, le=15.0)
+    max_hours_per_week: int = Field(default=16, gt=0, le=40)
+    duration_weeks: int = Field(default=24, gt=0, le=52)
+    notes: Optional[str] = None
+
+
+class WageSubsidySchemeDraftSchema(BaseModel):
+    title: str = Field(..., min_length=3, max_length=200)
+    description: Optional[str] = None
+    total_budget: float = Field(..., gt=1000)
+    subsidy_rate_per_hour: float = Field(default=4.50, gt=0)
+    max_hours_per_week_per_youth: int = Field(default=16, gt=0, le=40)
+    max_duration_months: int = Field(default=6, gt=0, le=24)
+    target_postcodes: List[str] = []
+    target_sectors: List[str] = []
+
+
+class BudgetForecastParamsSchema(BaseModel):
+    youth_count: int = Field(..., ge=1, le=1000)
+    hourly_subsidy: float = Field(default=4.50, gt=0)
+    hours_per_week: int = Field(default=16, ge=1, le=40)
+    duration_weeks: int = Field(default=24, ge=1, le=52)
+    base_employer_wage: float = Field(default=7.00, ge=0)
+
+
+# ==========================================
 # Agent Output & Card DTOs
 # ==========================================
 
@@ -115,6 +147,10 @@ class UICardPayload(BaseModel):
         "candidate_match",
         "profile_summary",
         "opportunity_draft",
+        "subsidy_offer",
+        "scheme_draft",
+        "company_assessment",
+        "budget_forecast",
     ]
     data: Dict[str, Any]
 
@@ -145,4 +181,3 @@ class ActionConfirmationResult(BaseModel):
     status: str
     message: str
     result_data: Optional[Dict[str, Any]] = None
-

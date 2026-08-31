@@ -104,7 +104,7 @@ Base = declarative_base()
 
 
 def init_db():
-    """Ensure database schema is created and auto-seed initial UK data if database is empty."""
+    """Ensure database schema is created and seed initial UK data and demo accounts."""
     # Import all models so metadata is complete
     import app.models  # noqa: F401
     from app.models.user import User
@@ -113,10 +113,7 @@ def init_db():
     try:
         Base.metadata.create_all(bind=engine)
         with SessionLocal() as db:
-            user_count = db.query(User).count()
-            if user_count == 0:
-                logger.info("Standalone database is empty. Auto-seeding UK opportunities and demo accounts...")
-                seed_database(db=db)
+            seed_database(db=db)
     except Exception as err:
         logger.error(f"Error during init_db: {err}")
 

@@ -1,14 +1,13 @@
 import pytest
 
 
-def get_token_for(client, email, password):
-    res = client.post("/auth/login", json={"email": email, "password": password})
-    assert res.status_code == 200
-    return res.json()["access_token"]
-
-
 def test_youth_apply_and_track_application(client):
-    youth_token = get_token_for(client, "sarah.youth@example.com", "Password123!")
+    reg = client.post(
+        "/auth/register",
+        json={"email": "apptest.youth@example.com", "password": "Password123!", "role": "youth"},
+    )
+    assert reg.status_code == 201
+    youth_token = reg.json()["access_token"]
     youth_headers = {"Authorization": f"Bearer {youth_token}"}
 
     # Find a published opportunity
@@ -53,4 +52,3 @@ def test_youth_apply_and_track_application(client):
     )
     assert withdraw_res.status_code == 200
     assert withdraw_res.json()["status"] == "withdrawn"
-

@@ -11,6 +11,9 @@ from app.models.conversation import Conversation
 from app.models.conversation_message import ConversationMessage
 from app.models.pending_action import PendingAction
 from app.models.skill import Skill, SkillAlias, SkillCategory, SkillRelationship
+from app.models.council import Council
+from app.models.wage_subsidy_scheme import WageSubsidyScheme
+from app.models.wage_subsidy_allocation import WageSubsidyAllocation
 
 __all__ = [
     "Base",
@@ -29,4 +32,7 @@ __all__ = [
     "SkillAlias",
     "SkillCategory",
     "SkillRelationship",
+    "Council",
+    "WageSubsidyScheme",
+    "WageSubsidyAllocation",
 ]

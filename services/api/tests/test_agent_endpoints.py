@@ -79,3 +79,45 @@ def test_business_agent_conversation_flow(client):
     )
     assert res_cands.status_code == 200
 
+
+def test_council_agent_conversation_flow(client):
+    token = get_token_for(client, "council@example.com")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Start council conversation
+    res_start = client.post("/conversations", json={"mode": "council"}, headers=headers)
+    assert res_start.status_code == 201
+    conv_id = res_start.json()["id"]
+
+    # 2. Query budget modeling & forecasting
+    res_forecast = client.post(
+        f"/conversations/{conv_id}/messages",
+        json={"message": "Model 10 youth placements at £4.50 per hour for 16 hrs a week"},
+        headers=headers,
+    )
+    assert res_forecast.status_code == 200
+    data_f = res_forecast.json()
+    assert len(data_f["ui_cards"]) > 0
+    assert any(c["card_type"] == "budget_forecast" for c in data_f["ui_cards"])
+
+    # 3. Draft wage subsidy pledge for Chesham Bike Works
+    res_pledge = client.post(
+        f"/conversations/{conv_id}/messages",
+        json={"message": "Pledge subsidy of £4.50 to Chesham Community Bike Works for 16 hours a week"},
+        headers=headers,
+    )
+    assert res_pledge.status_code == 200
+    data_p = res_pledge.json()
+    assert data_p["pending_action"] is not None
+    assert data_p["pending_action"]["action_type"] == "wage_subsidy_pledge"
+    assert any(c["card_type"] == "subsidy_offer" for c in data_p["ui_cards"])
+
+    # 4. Confirm wage subsidy grant commitment
+    action_id = data_p["pending_action"]["id"]
+    res_confirm = client.post(
+        f"/conversations/{conv_id}/confirm-action/{action_id}",
+        headers=headers,
+    )
+    assert res_confirm.status_code == 200
+    assert res_confirm.json()["status"] == "confirmed"
+    assert "Successfully authorized" in res_confirm.json()["message"]

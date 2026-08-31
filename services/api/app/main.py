@@ -13,6 +13,7 @@ from app.routers import (
     matches,
     ai_coach,
     conversations,
+    councils,
 )
 
 
@@ -37,6 +38,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -51,6 +53,7 @@ app.include_router(applications.router)
 app.include_router(matches.router)
 app.include_router(ai_coach.router)
 app.include_router(conversations.router)
+app.include_router(councils.router)
 
 
 @app.get("/health", tags=["Infrastructure"])

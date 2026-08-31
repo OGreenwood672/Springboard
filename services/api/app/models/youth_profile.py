@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Integer, Float, Text, JSON, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, Float, Boolean, Text, JSON, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base, GUID, PointGeometry
 from app.core.time import utc_now
@@ -39,6 +39,11 @@ class YouthProfile(Base):
     bio = Column(Text, nullable=True)
     preferred_opportunity_types = Column(JSON, default=list, nullable=False)  # ['part_time_job', 'work_experience', 'volunteering']
 
+    # Social Mobility & Low-Income Eligibility
+    is_low_income_eligible = Column(Boolean, default=False, nullable=False)  # Eligible for council wage subsidy top-up
+    household_income_bracket = Column(String(50), nullable=True)  # "under_18k", "18k_25k", "25k_35k", "above_35k", "prefer_not_to_say"
+    pupil_premium_recipient = Column(Boolean, default=False, nullable=False)
+
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
@@ -64,4 +69,7 @@ class YouthProfile(Base):
         back_populates="youth_profile",
         cascade="all, delete-orphan",
     )
-
+    subsidy_allocations = relationship(
+        "WageSubsidyAllocation",
+        back_populates="youth_profile",
+    )

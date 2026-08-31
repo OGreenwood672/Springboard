@@ -6,6 +6,9 @@
     "dev:web": "pnpm --filter @springboard/web dev",
     "build:web": "pnpm --filter @springboard/web build",
     "test:web": "pnpm --filter @springboard/web test",
+    "dev:council": "pnpm --filter @springboard/council dev",
+    "build:council": "pnpm --filter @springboard/council build",
+    "test:council": "pnpm --filter @springboard/council test",
     "build:types": "pnpm --filter @springboard/shared-types build",
     "test:api": "cd services/api && .\\.venv\\Scripts\\pytest.exe"
   },

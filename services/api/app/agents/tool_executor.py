@@ -15,6 +15,9 @@ from app.models import (
     PendingAction,
     YouthQualification,
     Qualification,
+    Council,
+    WageSubsidyScheme,
+    WageSubsidyAllocation,
 )
 from app.services.matching_service import (
     calculate_match_score,
@@ -996,3 +999,584 @@ class ToolExecutor:
             "opportunity_id": str(opp.id),
             "new_status": opp.status,
         }
+
+    # =========================================================================
+    # Council Tools
+    # =========================================================================
+
+    def _get_council(self) -> Council:
+        if self.user.role != "council":
+            raise HTTPException(status_code=403, detail="Only council authority accounts can access council tools.")
+        council = self.db.query(Council).filter(Council.user_id == self.user.id).first()
+        if not council:
+            # Create default council profile if missing
+            council = Council(
+                id=uuid.uuid4(),
+                user_id=self.user.id,
+                name="Local Authority Council",
+                council_type="unitary",
+                region="South East",
+                contact_name=self.user.email.split("@")[0].capitalize(),
+                contact_email=self.user.email,
+                postcode="HP5 1AA",
+                total_budget_allocated=100000.0,
+                total_budget_spent=0.0,
+                deprivation_focus_areas=["HP5 1", "HP5 2"],
+            )
+            self.db.add(council)
+            self.db.commit()
+            self.db.refresh(council)
+        return council
+
+    def get_my_council_overview(self, **kwargs) -> Tuple[Dict[str, Any], List[UICardPayload]]:
+        council = self._get_council()
+        schemes = self.db.query(WageSubsidyScheme).filter(WageSubsidyScheme.council_id == council.id).all()
+        allocations = self.db.query(WageSubsidyAllocation).filter(WageSubsidyAllocation.council_id == council.id).all()
+        businesses = self.db.query(Business).filter(Business.wage_subsidy_eligible == True).all()
+
+        remaining_budget = max(0.0, council.total_budget_allocated - council.total_budget_spent)
+        active_allocations = [a for a in allocations if a.status in ["active", "approved"]]
+
+        data = {
+            "council_id": str(council.id),
+            "name": council.name,
+            "council_type": council.council_type,
+            "region": council.region,
+            "postcode": council.postcode,
+            "total_budget_allocated": council.total_budget_allocated,
+            "total_budget_spent": council.total_budget_spent,
+            "remaining_budget": remaining_budget,
+            "budget_utilisation_pct": round((council.total_budget_spent / council.total_budget_allocated * 100) if council.total_budget_allocated > 0 else 0, 1),
+            "active_schemes_count": len([s for s in schemes if s.is_active]),
+            "active_allocations_count": len(active_allocations),
+            "eligible_businesses_count": len(businesses),
+            "deprivation_focus_areas": council.deprivation_focus_areas or [],
+        }
+
+        cards = [
+            UICardPayload(
+                id=str(uuid.uuid4()),
+                card_type="profile_summary",
+                data={
+                    "title": council.name,
+                    "subtitle": f"{council.council_type.capitalize()} Authority • {council.region}",
+                    "stats": [
+                        {"label": "Allocated Fund", "value": f"£{council.total_budget_allocated:,.0f}"},
+                        {"label": "Committed Grants", "value": f"£{council.total_budget_spent:,.0f}"},
+                        {"label": "Remaining", "value": f"£{remaining_budget:,.0f}"},
+                        {"label": "Active Pledges", "value": str(len(active_allocations))},
+                    ],
+                    "deprivation_areas": council.deprivation_focus_areas or [],
+                },
+            )
+        ]
+
+        return data, cards
+
+    def search_local_smes_for_subsidy(
+        self,
+        sector: Optional[str] = None,
+        company_size: Optional[str] = None,
+        subsidy_status: Optional[str] = None,
+        min_catchment_score: Optional[float] = None,
+        search: Optional[str] = None,
+        **kwargs,
+    ) -> Tuple[Dict[str, Any], List[UICardPayload]]:
+        self._get_council()
+
+        query = self.db.query(Business)
+
+        if sector and sector.lower() != "all":
+            query = query.filter(Business.organisation_type.ilike(f"%{sector}%"))
+        if company_size and company_size.lower() != "all":
+            query = query.filter(Business.company_size == company_size.lower())
+        if subsidy_status and subsidy_status.lower() != "all":
+            query = query.filter(Business.wage_subsidy_status == subsidy_status.lower())
+        if min_catchment_score is not None:
+            query = query.filter(Business.low_income_catchment_score >= min_catchment_score)
+        if search:
+            query = query.filter(
+                (Business.name.ilike(f"%{search}%")) |
+                (Business.address.ilike(f"%{search}%")) |
+                (Business.description.ilike(f"%{search}%"))
+            )
+
+        businesses = query.order_by(Business.low_income_catchment_score.desc()).limit(10).all()
+
+        results = []
+        for b in businesses:
+            opp_count = self.db.query(Opportunity).filter(Opportunity.business_id == b.id, Opportunity.status == "published").count()
+            results.append({
+                "id": str(b.id),
+                "name": b.name,
+                "organisation_type": b.organisation_type,
+                "company_size": b.company_size,
+                "employee_count": b.employee_count,
+                "address": b.address,
+                "postcode": b.postcode,
+                "wage_subsidy_status": b.wage_subsidy_status,
+                "current_wage_offered": b.current_wage_offered,
+                "target_wage": b.target_wage,
+                "hourly_wage_gap": b.hourly_wage_gap,
+                "low_income_catchment_score": b.low_income_catchment_score,
+                "youth_mentorship_commitment": b.youth_mentorship_commitment,
+                "open_opportunities_count": opp_count,
+            })
+
+        cards = []
+        for b in results[:3]:
+            cards.append(
+                UICardPayload(
+                    id=str(uuid.uuid4()),
+                    card_type="company_assessment",
+                    data={
+                        "business_id": b["id"],
+                        "name": b["name"],
+                        "organisation_type": b["organisation_type"],
+                        "company_size": b["company_size"],
+                        "postcode": b["postcode"],
+                        "current_wage": b["current_wage_offered"],
+                        "target_wage": b["target_wage"],
+                        "hourly_wage_gap": b["hourly_wage_gap"],
+                        "catchment_score": b["low_income_catchment_score"],
+                        "status": b["wage_subsidy_status"],
+                        "mentorship": b["youth_mentorship_commitment"],
+                        "open_roles": b["open_opportunities_count"],
+                    },
+                )
+            )
+
+        return {"count": len(results), "businesses": results}, cards
+
+    def assess_company_wage_subsidy(
+        self,
+        business_id: Optional[str] = None,
+        business_name: Optional[str] = None,
+        **kwargs,
+    ) -> Tuple[Dict[str, Any], List[UICardPayload]]:
+        self._get_council()
+
+        biz = None
+        if business_id:
+            biz = self.db.query(Business).filter(Business.id == uuid.UUID(business_id)).first()
+        elif business_name:
+            biz = self.db.query(Business).filter(Business.name.ilike(f"%{business_name}%")).first()
+
+        if not biz:
+            return {"error": f"Business '{business_id or business_name}' not found."}, []
+
+        opps = self.db.query(Opportunity).filter(Opportunity.business_id == biz.id).all()
+        allocations = self.db.query(WageSubsidyAllocation).filter(WageSubsidyAllocation.business_id == biz.id).all()
+
+        recommended_hourly_subsidy = round(biz.target_wage - biz.current_wage_offered, 2)
+        if recommended_hourly_subsidy <= 0:
+            recommended_hourly_subsidy = 4.50
+
+        assessment_data = {
+            "business_id": str(biz.id),
+            "name": biz.name,
+            "organisation_type": biz.organisation_type,
+            "company_size": biz.company_size,
+            "employee_count": biz.employee_count,
+            "address": biz.address,
+            "postcode": biz.postcode,
+            "wage_subsidy_status": biz.wage_subsidy_status,
+            "current_wage_offered": biz.current_wage_offered,
+            "target_wage": biz.target_wage,
+            "hourly_wage_gap": biz.hourly_wage_gap,
+            "recommended_hourly_subsidy": recommended_hourly_subsidy,
+            "low_income_catchment_score": biz.low_income_catchment_score,
+            "youth_mentorship_commitment": biz.youth_mentorship_commitment,
+            "open_opportunities": len(opps),
+            "active_allocations": len(allocations),
+            "estimated_grant_24_weeks_16_hrs": round(recommended_hourly_subsidy * 16 * 24, 2),
+        }
+
+        cards = [
+            UICardPayload(
+                id=str(uuid.uuid4()),
+                card_type="company_assessment",
+                data=assessment_data,
+            )
+        ]
+
+        return assessment_data, cards
+
+    def draft_wage_subsidy_pledge(
+        self,
+        business_id: Optional[str] = None,
+        business_name: Optional[str] = None,
+        scheme_id: Optional[str] = None,
+        hourly_subsidy: float = 4.50,
+        max_hours_per_week: int = 16,
+        duration_weeks: int = 24,
+        notes: Optional[str] = None,
+        **kwargs,
+    ) -> Tuple[Dict[str, Any], List[UICardPayload]]:
+        council = self._get_council()
+
+        biz = None
+        if business_id:
+            biz = self.db.query(Business).filter(Business.id == uuid.UUID(business_id)).first()
+        elif business_name:
+            biz = self.db.query(Business).filter(Business.name.ilike(f"%{business_name}%")).first()
+
+        if not biz:
+            return {"error": f"Business '{business_id or business_name}' not found for wage subsidy pledge."}, []
+
+        scheme = None
+        if scheme_id:
+            scheme = self.db.query(WageSubsidyScheme).filter(WageSubsidyScheme.id == uuid.UUID(scheme_id)).first()
+        else:
+            scheme = self.db.query(WageSubsidyScheme).filter(
+                WageSubsidyScheme.council_id == council.id,
+                WageSubsidyScheme.is_active == True,
+            ).first()
+
+        if not scheme:
+            # Create a default active scheme if none exists
+            scheme = WageSubsidyScheme(
+                id=uuid.uuid4(),
+                council_id=council.id,
+                title=f"{council.name} Youth Wage Fund 2026",
+                description="Co-funding hourly living wages for young people in local micro and small businesses",
+                total_budget=75000.0,
+                remaining_budget=75000.0,
+                subsidy_rate_per_hour=4.50,
+                max_hours_per_week_per_youth=16,
+                max_duration_months=6,
+                is_active=True,
+            )
+            self.db.add(scheme)
+            self.db.commit()
+            self.db.refresh(scheme)
+
+        total_grant = round(hourly_subsidy * max_hours_per_week * duration_weeks, 2)
+        combined_wage = round(biz.current_wage_offered + hourly_subsidy, 2)
+
+        payload = {
+            "business_id": str(biz.id),
+            "business_name": biz.name,
+            "scheme_id": str(scheme.id),
+            "scheme_title": scheme.title,
+            "council_id": str(council.id),
+            "hourly_subsidy": hourly_subsidy,
+            "current_wage": biz.current_wage_offered,
+            "combined_wage": combined_wage,
+            "target_living_wage": biz.target_wage,
+            "max_hours_per_week": max_hours_per_week,
+            "duration_weeks": duration_weeks,
+            "total_allocated_amount": total_grant,
+            "notes": notes or f"Wage subsidy co-funding grant for {biz.name}",
+        }
+
+        pending = PendingAction(
+            id=uuid.uuid4(),
+            user_id=self.user.id,
+            conversation_id=self.conversation_id,
+            action_type="wage_subsidy_pledge",
+            payload=payload,
+            status="pending",
+            expires_at=utc_now() + timedelta(hours=48),
+        )
+        self.db.add(pending)
+        self.db.commit()
+        self.db.refresh(pending)
+
+        cards = [
+            UICardPayload(
+                id=str(uuid.uuid4()),
+                card_type="subsidy_offer",
+                data={
+                    "pending_action_id": str(pending.id),
+                    "business_id": str(biz.id),
+                    "business_name": biz.name,
+                    "scheme_id": str(scheme.id),
+                    "scheme_title": scheme.title,
+                    "hourly_subsidy": hourly_subsidy,
+                    "company_base_wage": biz.current_wage_offered,
+                    "combined_youth_wage": combined_wage,
+                    "target_living_wage": biz.target_wage,
+                    "max_hours_per_week": max_hours_per_week,
+                    "duration_weeks": duration_weeks,
+                    "total_grant_amount": total_grant,
+                    "scheme_remaining_budget": scheme.remaining_budget,
+                    "notes": payload["notes"],
+                    "expires_at": pending.expires_at.isoformat(),
+                    "status": "pending",
+                },
+            )
+        ]
+
+        return {
+            "status": "pending_confirmation",
+            "pending_action_id": str(pending.id),
+            "summary": f"Proposed £{hourly_subsidy:.2f}/hr wage subsidy for '{biz.name}' (£{total_grant:,.2f} total). Awaiting council authorization.",
+            "pledge_details": payload,
+        }, cards
+
+    def confirm_wage_subsidy_pledge(self, pending_action_id: str) -> Dict[str, Any]:
+        if self.user.role != "council":
+            raise HTTPException(status_code=403, detail="Unauthorized role.")
+
+        action = self.db.query(PendingAction).filter(
+            PendingAction.id == uuid.UUID(pending_action_id),
+            PendingAction.user_id == self.user.id,
+        ).first()
+
+        if not action or action.status != "pending" or is_expired(action.expires_at):
+            raise HTTPException(status_code=400, detail="Invalid or expired action.")
+
+        payload = action.payload
+        council = self._get_council()
+
+        biz = self.db.query(Business).filter(Business.id == uuid.UUID(payload["business_id"])).first()
+        if not biz:
+            raise HTTPException(status_code=404, detail="Business not found.")
+
+        scheme = self.db.query(WageSubsidyScheme).filter(WageSubsidyScheme.id == uuid.UUID(payload["scheme_id"])).first()
+        if not scheme:
+            raise HTTPException(status_code=404, detail="Subsidy scheme not found.")
+
+        grant_amount = float(payload["total_allocated_amount"])
+        if scheme.remaining_budget < grant_amount:
+            raise HTTPException(status_code=400, detail=f"Insufficient scheme budget remaining (£{scheme.remaining_budget:,.2f} available vs £{grant_amount:,.2f} requested).")
+
+        # Create allocation
+        allocation = WageSubsidyAllocation(
+            id=uuid.uuid4(),
+            scheme_id=scheme.id,
+            council_id=council.id,
+            business_id=biz.id,
+            allocated_amount=grant_amount,
+            hourly_subsidy=float(payload["hourly_subsidy"]),
+            max_hours_per_week=int(payload["max_hours_per_week"]),
+            duration_weeks=int(payload["duration_weeks"]),
+            status="active",
+            notes=payload.get("notes"),
+        )
+        self.db.add(allocation)
+
+        # Update scheme and council budget
+        scheme.remaining_budget = max(0.0, scheme.remaining_budget - grant_amount)
+        council.total_budget_spent += grant_amount
+
+        # Update business status
+        biz.wage_subsidy_status = "active_subsidised"
+
+        # Confirm pending action
+        action.status = "confirmed"
+        action.confirmed_at = utc_now()
+
+        self.db.commit()
+
+        return {
+            "status": "confirmed",
+            "message": f"Successfully authorized and committed £{grant_amount:,.2f} wage subsidy grant for {biz.name}!",
+            "allocation_id": str(allocation.id),
+            "business_name": biz.name,
+            "total_allocated": grant_amount,
+            "scheme_remaining_budget": scheme.remaining_budget,
+            "business_status": "active_subsidised",
+        }
+
+    def model_scheme_budget_forecast(
+        self,
+        youth_count: int,
+        hourly_subsidy: float = 4.50,
+        hours_per_week: int = 16,
+        duration_weeks: int = 24,
+        base_employer_wage: float = 7.00,
+        **kwargs,
+    ) -> Tuple[Dict[str, Any], List[UICardPayload]]:
+        council = self._get_council()
+
+        cost_per_youth = round(hourly_subsidy * hours_per_week * duration_weeks, 2)
+        total_council_fund = round(cost_per_youth * youth_count, 2)
+        employer_co_contribution = round(base_employer_wage * hours_per_week * duration_weeks * youth_count, 2)
+        total_youth_earnings = round(total_council_fund + employer_co_contribution, 2)
+        combined_hourly_rate = round(base_employer_wage + hourly_subsidy, 2)
+        social_mobility_roi_multiplier = 3.80  # HM Treasury Green Book multiplier
+        local_economic_benefit = round(total_youth_earnings * social_mobility_roi_multiplier, 2)
+
+        data = {
+            "youth_cohort_size": youth_count,
+            "hourly_subsidy": hourly_subsidy,
+            "hours_per_week": hours_per_week,
+            "duration_weeks": duration_weeks,
+            "base_employer_wage": base_employer_wage,
+            "combined_hourly_rate": combined_hourly_rate,
+            "cost_per_placement": cost_per_youth,
+            "total_council_budget_required": total_council_fund,
+            "employer_co_contribution_total": employer_co_contribution,
+            "total_youth_wages_injected": total_youth_earnings,
+            "social_mobility_multiplier": f"£{social_mobility_roi_multiplier:.2f}x",
+            "estimated_local_economic_benefit": local_economic_benefit,
+            "affordable_from_current_balance": total_council_fund <= max(0.0, council.total_budget_allocated - council.total_budget_spent),
+        }
+
+        cards = [
+            UICardPayload(
+                id=str(uuid.uuid4()),
+                card_type="budget_forecast",
+                data=data,
+            )
+        ]
+
+        return data, cards
+
+    def query_deprivation_wards(
+        self,
+        postcode_prefix: Optional[str] = None,
+        **kwargs,
+    ) -> Tuple[Dict[str, Any], List[UICardPayload]]:
+        council = self._get_council()
+
+        # Target ward profiles
+        ward_profiles = [
+            {
+                "ward_name": "Chesham Waterside & Vale",
+                "postcode_prefix": "HP5 1",
+                "deprivation_decile": 2,
+                "youth_population_estimate": 1240,
+                "low_income_family_percentage": 38.5,
+                "priority_level": "High (Decile 2)",
+                "sme_count_in_ward": 4,
+            },
+            {
+                "ward_name": "High Wycombe Central & Abbey",
+                "postcode_prefix": "HP11 2",
+                "deprivation_decile": 1,
+                "youth_population_estimate": 2180,
+                "low_income_family_percentage": 44.2,
+                "priority_level": "Critical (Decile 1)",
+                "sme_count_in_ward": 6,
+            },
+            {
+                "ward_name": "Aylesbury South & Elmhurst",
+                "postcode_prefix": "HP20 1",
+                "deprivation_decile": 3,
+                "youth_population_estimate": 1750,
+                "low_income_family_percentage": 32.1,
+                "priority_level": "Medium (Decile 3)",
+                "sme_count_in_ward": 3,
+            },
+        ]
+
+        if postcode_prefix:
+            ward_profiles = [w for w in ward_profiles if postcode_prefix.upper() in w["postcode_prefix"]]
+
+        return {
+            "council_name": council.name,
+            "total_deprivation_wards": len(ward_profiles),
+            "wards": ward_profiles,
+        }, []
+
+    def draft_wage_subsidy_scheme(
+        self,
+        title: str,
+        total_budget: float,
+        description: Optional[str] = None,
+        subsidy_rate_per_hour: float = 4.50,
+        max_hours_per_week_per_youth: int = 16,
+        max_duration_months: int = 6,
+        target_postcodes: Optional[List[str]] = None,
+        target_sectors: Optional[List[str]] = None,
+        **kwargs,
+    ) -> Tuple[Dict[str, Any], List[UICardPayload]]:
+        council = self._get_council()
+
+        payload = {
+            "council_id": str(council.id),
+            "title": title,
+            "description": description or f"Wage subsidy fund to support low-income youth employment across {council.name}.",
+            "total_budget": total_budget,
+            "subsidy_rate_per_hour": subsidy_rate_per_hour,
+            "max_hours_per_week_per_youth": max_hours_per_week_per_youth,
+            "max_duration_months": max_duration_months,
+            "target_postcodes": target_postcodes or council.deprivation_focus_areas or ["HP5", "HP6"],
+            "target_sectors": target_sectors or ["Retail", "Hospitality", "Technology", "Green Energy"],
+        }
+
+        pending = PendingAction(
+            id=uuid.uuid4(),
+            user_id=self.user.id,
+            conversation_id=self.conversation_id,
+            action_type="create_subsidy_scheme",
+            payload=payload,
+            status="pending",
+            expires_at=utc_now() + timedelta(hours=72),
+        )
+        self.db.add(pending)
+        self.db.commit()
+        self.db.refresh(pending)
+
+        cards = [
+            UICardPayload(
+                id=str(uuid.uuid4()),
+                card_type="scheme_draft",
+                data={
+                    "pending_action_id": str(pending.id),
+                    "title": title,
+                    "description": payload["description"],
+                    "total_budget": total_budget,
+                    "hourly_rate": subsidy_rate_per_hour,
+                    "max_hours_per_week": max_hours_per_week_per_youth,
+                    "duration_months": max_duration_months,
+                    "target_postcodes": payload["target_postcodes"],
+                    "target_sectors": payload["target_sectors"],
+                    "expires_at": pending.expires_at.isoformat(),
+                    "status": "pending",
+                },
+            )
+        ]
+
+        return {
+            "status": "pending_confirmation",
+            "pending_action_id": str(pending.id),
+            "summary": f"Scheme proposal '{title}' (£{total_budget:,.2f}) drafted. Awaiting council authorization.",
+        }, cards
+
+    def confirm_wage_subsidy_scheme(self, pending_action_id: str) -> Dict[str, Any]:
+        if self.user.role != "council":
+            raise HTTPException(status_code=403, detail="Unauthorized role.")
+
+        action = self.db.query(PendingAction).filter(
+            PendingAction.id == uuid.UUID(pending_action_id),
+            PendingAction.user_id == self.user.id,
+        ).first()
+
+        if not action or action.status != "pending" or is_expired(action.expires_at):
+            raise HTTPException(status_code=400, detail="Invalid or expired action.")
+
+        payload = action.payload
+        council = self._get_council()
+
+        scheme = WageSubsidyScheme(
+            id=uuid.uuid4(),
+            council_id=council.id,
+            title=payload["title"],
+            description=payload.get("description"),
+            total_budget=float(payload["total_budget"]),
+            remaining_budget=float(payload["total_budget"]),
+            subsidy_rate_per_hour=float(payload.get("subsidy_rate_per_hour", 4.50)),
+            max_hours_per_week_per_youth=int(payload.get("max_hours_per_week_per_youth", 16)),
+            max_duration_months=int(payload.get("max_duration_months", 6)),
+            target_postcodes=payload.get("target_postcodes", []),
+            target_sectors=payload.get("target_sectors", []),
+            is_active=True,
+        )
+        self.db.add(scheme)
+
+        action.status = "confirmed"
+        action.confirmed_at = utc_now()
+        self.db.commit()
+
+        return {
+            "status": "confirmed",
+            "message": f"Subsidy scheme '{scheme.title}' created and activated with a budget of £{scheme.total_budget:,.2f}!",
+            "scheme_id": str(scheme.id),
+            "title": scheme.title,
+            "total_budget": scheme.total_budget,
+        }
+

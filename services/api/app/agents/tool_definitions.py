@@ -214,3 +214,100 @@ BUSINESS_TOOL_DEFINITIONS = [
     },
 ]
 
+COUNCIL_TOOL_DEFINITIONS = [
+    {
+        "name": "get_my_council_overview",
+        "description": "Retrieves the authenticated council's profile, total budget allocated, total spent, remaining funds, active subsidy schemes, and key deprivation focus wards.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "search_local_smes_for_subsidy",
+        "description": "Searches and filters local micro and small businesses based on sector, wage gap, company size, postcode prefix, or subsidy status.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "sector": {"type": "STRING", "description": "Filter by industry sector (e.g. Technology, Hospitality, Retail, Green Energy)"},
+                "company_size": {"type": "STRING", "enum": ["all", "micro", "small", "medium"], "description": "Filter by company size"},
+                "subsidy_status": {"type": "STRING", "enum": ["all", "eligible", "active_subsidised", "pledged"], "description": "Filter by subsidy eligibility/pledge status"},
+                "min_catchment_score": {"type": "NUMBER", "description": "Minimum low-income catchment priority score (0-100)"},
+                "search": {"type": "STRING", "description": "Keyword search across business name, address, or description"},
+            },
+        },
+    },
+    {
+        "name": "assess_company_wage_subsidy",
+        "description": "Performs an in-depth wage gap, living wage bridge, and social mobility assessment for a specific local business.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "business_id": {"type": "STRING", "description": "UUID of the business to assess"},
+                "business_name": {"type": "STRING", "description": "Name or keyword of the business if UUID is not known"},
+            },
+        },
+    },
+    {
+        "name": "draft_wage_subsidy_pledge",
+        "description": "Drafts a wage subsidy allocation for a local business to co-fund young employees from low-income families at the Real Living Wage. Creates a pending action for the council officer to confirm.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "business_id": {"type": "STRING", "description": "UUID of the business receiving the grant pledge"},
+                "business_name": {"type": "STRING", "description": "Name of the business if UUID is not known"},
+                "scheme_id": {"type": "STRING", "description": "UUID of the subsidy scheme fund pool (optional; defaults to primary active scheme)"},
+                "hourly_subsidy": {"type": "NUMBER", "description": "Hourly top-up grant in GBP (e.g. 4.50)"},
+                "max_hours_per_week": {"type": "INTEGER", "description": "Maximum subsidised hours per week (e.g. 16)"},
+                "duration_weeks": {"type": "INTEGER", "description": "Duration of the wage subsidy placement in weeks (e.g. 24)"},
+                "notes": {"type": "STRING", "description": "Policy notes or target youth criteria for this pledge"},
+            },
+        },
+    },
+    {
+        "name": "model_scheme_budget_forecast",
+        "description": "Models multi-youth cohort budget projections, employer co-contribution, total youth earnings, and Treasury Green Book social mobility ROI multipliers.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "youth_count": {"type": "INTEGER", "description": "Number of young people in cohort (e.g. 10)"},
+                "hourly_subsidy": {"type": "NUMBER", "description": "Hourly grant top-up rate (e.g. 4.50)"},
+                "hours_per_week": {"type": "INTEGER", "description": "Hours per week per youth (e.g. 16)"},
+                "duration_weeks": {"type": "INTEGER", "description": "Duration in weeks (e.g. 24)"},
+                "base_employer_wage": {"type": "NUMBER", "description": "Estimated base wage paid by company (e.g. 7.00)"},
+            },
+            "required": ["youth_count"],
+        },
+    },
+    {
+        "name": "query_deprivation_wards",
+        "description": "Retrieves demographic data for UK Index of Multiple Deprivation (IMD) target wards, low-income family percentages, and youth population estimates in the council area.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "postcode_prefix": {"type": "STRING", "description": "Optional postcode area prefix (e.g. HP5, HP6, NW1)"},
+            },
+        },
+    },
+    {
+        "name": "draft_wage_subsidy_scheme",
+        "description": "Proposes creating a new ring-fenced wage subsidy fund scheme. Creates a pending action for the council officer to confirm.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "title": {"type": "STRING", "description": "Scheme title (e.g. Chesham High Street Youth Bridge 2026)"},
+                "description": {"type": "STRING", "description": "Policy purpose and scope of the funding scheme"},
+                "total_budget": {"type": "NUMBER", "description": "Total fund allocation in GBP (e.g. 50000.0)"},
+                "subsidy_rate_per_hour": {"type": "NUMBER", "description": "Hourly grant rate in GBP (e.g. 4.50)"},
+                "max_hours_per_week_per_youth": {"type": "INTEGER", "description": "Weekly cap on subsidised hours (e.g. 16)"},
+                "max_duration_months": {"type": "INTEGER", "description": "Max duration in months (e.g. 6)"},
+                "target_postcodes": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "Target postcode areas (e.g. ['HP5 1', 'HP5 2'])"},
+                "target_sectors": {"type": "ARRAY", "items": {"type": "STRING"}, "description": "Target industry sectors (e.g. ['Retail', 'Hospitality'])"},
+            },
+            "required": ["title", "total_budget"],
+        },
+    },
+]
+
+

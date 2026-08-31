@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, YouthProfile, Business
+from app.models import User, YouthProfile, Business, Council
 from app.schemas.auth import UserRegister, UserLogin, AuthResponse, UserOut
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.core.dependencies import get_current_user
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 def register(payload: UserRegister, db: Session = Depends(get_db)):
-    """Register a new youth or business account."""
+    """Register a new youth, business, or council account."""
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(
@@ -46,6 +46,18 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
             contact_email=payload.email,
         )
         db.add(business)
+    elif user.role == "council":
+        council = Council(
+            user_id=user.id,
+            name=payload.email.split("@")[0].replace(".", " ").title() + " Council",
+            council_type="unitary",
+            region="South East",
+            contact_name="Youth Employment Officer",
+            contact_email=payload.email,
+            total_budget_allocated=100000.0,
+            total_budget_spent=0.0,
+        )
+        db.add(council)
 
     db.commit()
     db.refresh(user)

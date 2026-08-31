@@ -7,7 +7,7 @@ from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
-    role: Literal["youth", "business"]
+    role: Literal["youth", "business", "council"]
 
     @field_validator("email", mode="before")
     @classmethod

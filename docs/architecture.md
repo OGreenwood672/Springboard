@@ -2,27 +2,32 @@
 
 ## 1. System Overview
 
-Springboard is a conversation-first web platform dedicated to unlocking part-time work, work experience placements, and volunteering opportunities for young people across the UK. It bridges youth candidates and local businesses through interactive AI agents, transparent deterministic matching algorithms, and streamlined application workflows.
+Springboard is a multi-sided economic and opportunity platform dedicated to unlocking part-time work, work experience placements, and volunteering opportunities for young people across the UK. It bridges youth candidates, local businesses, and **UK Local Councils** through interactive AI agents, transparent deterministic matching algorithms, and a spatial wage subsidy platform.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                   React 18 SPA (apps/web)                   │
-│   Tailwind CSS • React Router 6 • Context (Auth & Toast)   │
-│   Features: AgentChat • UI Cards • Form Review Fallbacks    │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ JSON / REST (Bearer JWT)
-┌──────────────────────────────▼──────────────────────────────┐
-│                  FastAPI Backend (services/api)              │
-│  Routers: Auth • Profiles • Businesses • Opps • Apps • Convs│
-│  Agents: YouthAgent • BusinessAgent • ToolExecutor • Gemini │
-│  Services: MatchingEngine (0-100) • Geocoding • Time / TTL  │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ SQLAlchemy 2 ORM
-┌──────────────────────────────▼──────────────────────────────┐
-│                PostgreSQL 16 + PostGIS 3.4                  │
-│       Spatial Geo-points • Geodesic Distance Calculations   │
-│       (Auto-fallback to SQLite in zero-config standalone)   │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────┐       ┌─────────────────────────────────┐
+│     React 18 SPA (apps/web)     │       │   Council Portal (apps/council) │
+│     Port 5173 • Youth & SME     │       │   Port 5174 • Local Councils    │
+│  AgentChat • Knowledge • Forms  │       │  Geospatial Map • Wage Grants   │
+└────────────────┬────────────────┘       └────────────────┬────────────────┘
+                 │                                         │
+                 └────────────────────┬────────────────────┘
+                                      │ JSON / REST (Bearer JWT)
+                 ┌────────────────────▼────────────────────┐
+                 │       FastAPI Backend (services/api)    │
+                 │ Routers: Auth, Profiles, Businesses,    │
+                 │          Opportunities, Apps, Matches,  │
+                 │          Conversations, Councils        │
+                 │ Agents: YouthAgent, BusinessAgent,      │
+                 │         ToolExecutor, Policy Advisor    │
+                 │ Services: Matching, Geocoding, Subsidy  │
+                 └────────────────────┬────────────────────┘
+                                      │ SQLAlchemy 2 ORM
+                 ┌────────────────────▼────────────────────┐
+                 │       PostgreSQL 16 + PostGIS 3.4       │
+                 │  Spatial Geo-points • Geodesic Radius   │
+                 │  (Auto-fallback to SQLite in standalone)│
+                 └─────────────────────────────────────────┘
 ```
 
 ---
@@ -33,6 +38,7 @@ Springboard is a conversation-first web platform dedicated to unlocking part-tim
 erDiagram
     USERS ||--o| YOUTH_PROFILES : "has one (if youth)"
     USERS ||--o| BUSINESSES : "has one (if business)"
+    USERS ||--o| COUNCILS : "has one (if council)"
     USERS ||--o{ CONVERSATIONS : "owns"
     USERS ||--o{ PENDING_ACTIONS : "initiates"
     CONVERSATIONS ||--o{ CONVERSATION_MESSAGES : "contains"
@@ -40,7 +46,12 @@ erDiagram
     YOUTH_PROFILES ||--o{ YOUTH_QUALIFICATIONS : "holds"
     YOUTH_PROFILES ||--o{ APPLICATIONS : "submits"
     YOUTH_PROFILES ||--o{ MATCHES : "receives"
+    YOUTH_PROFILES ||--o{ WAGE_SUBSIDY_ALLOCATIONS : "benefits from"
     BUSINESSES ||--o{ OPPORTUNITIES : "creates"
+    BUSINESSES ||--o{ WAGE_SUBSIDY_ALLOCATIONS : "receives grant"
+    COUNCILS ||--o{ WAGE_SUBSIDY_SCHEMES : "funds"
+    COUNCILS ||--o{ WAGE_SUBSIDY_ALLOCATIONS : "commits pledge"
+    WAGE_SUBSIDY_SCHEMES ||--o{ WAGE_SUBSIDY_ALLOCATIONS : "draws from"
     OPPORTUNITIES ||--o{ APPLICATIONS : "receives"
     OPPORTUNITIES ||--o{ MATCHES : "generates"
 
@@ -48,38 +59,53 @@ erDiagram
         uuid id PK
         string email
         string password_hash
-        string role "youth | business"
+        string role "youth | business | council"
     }
 
-    CONVERSATIONS {
+    COUNCILS {
         uuid id PK
         uuid user_id FK
-        string mode "youth | business"
+        string name
+        string council_type "unitary | county | district | london_borough | metropolitan"
+        string region
+        string contact_name
+        string contact_email
+        string postcode
+        point location
+        jsonb deprivation_focus_areas
+        float total_budget_allocated
+        float total_budget_spent
+    }
+
+    WAGE_SUBSIDY_SCHEMES {
+        uuid id PK
+        uuid council_id FK
         string title
-        datetime created_at
-        datetime updated_at
+        text description
+        float total_budget
+        float remaining_budget
+        float subsidy_rate_per_hour
+        int max_hours_per_week_per_youth
+        int max_duration_months
+        jsonb target_postcodes
+        jsonb target_sectors
+        boolean is_active
+        jsonb eligibility_criteria
     }
 
-    CONVERSATION_MESSAGES {
+    WAGE_SUBSIDY_ALLOCATIONS {
         uuid id PK
-        uuid conversation_id FK
-        string role "system | user | assistant | tool"
-        text content
-        string tool_name
-        jsonb tool_payload
-        datetime created_at
-    }
-
-    PENDING_ACTIONS {
-        uuid id PK
-        uuid user_id FK
-        uuid conversation_id FK
-        string action_type
-        jsonb payload
-        string status "pending | confirmed | cancelled | expired"
-        datetime expires_at
-        datetime created_at
-        datetime confirmed_at
+        uuid scheme_id FK
+        uuid council_id FK
+        uuid business_id FK
+        uuid opportunity_id FK
+        uuid youth_profile_id FK
+        float allocated_amount
+        float hourly_subsidy
+        int max_hours_per_week
+        int duration_weeks
+        string status "pledged | approved | active | completed | cancelled"
+        text notes
     }
 
     YOUTH_PROFILES {
@@ -94,6 +120,9 @@ erDiagram
         jsonb interests
         jsonb availability
         jsonb preferred_opportunity_types
+        boolean is_low_income_eligible
+        string household_income_bracket
+        boolean pupil_premium_recipient
     }
 
     BUSINESSES {
@@ -101,8 +130,16 @@ erDiagram
         uuid user_id FK
         string name
         string organisation_type
-        string contact_name
-        string contact_email
+        string company_size "micro | small | medium | large"
+        int employee_count
+        boolean wage_subsidy_eligible
+        string wage_subsidy_status "eligible | pledged | approved | active_subsidised | ineligible"
+        float low_income_catchment_score
+        float hourly_wage_gap
+        float current_wage_offered
+        float target_wage
+        boolean youth_mentorship_commitment
+        string address
         string postcode
         point location
     }
@@ -113,135 +150,50 @@ erDiagram
         string title
         string opportunity_type "part_time_job | work_experience | volunteering"
         string workplace_type "in_person | hybrid | remote"
-        string status "draft | published | closed"
-        string postcode
-        point location
         string pay_info
-        string hours_or_commitment
-        jsonb required_skills
-        jsonb preferred_skills
-    }
-
-    APPLICATIONS {
-        uuid id PK
-        uuid youth_profile_id FK
-        uuid opportunity_id FK
-        string status "submitted | reviewed | shortlisted | rejected | accepted | withdrawn"
-        text cover_note
-    }
-
-    MATCHES {
-        uuid id PK
-        uuid youth_profile_id FK
-        uuid opportunity_id FK
-        float score
-        jsonb factors
+        boolean wage_subsidy_applied
+        float hourly_wage_subsidised
+        string status "draft | published | closed"
     }
 ```
 
 ---
 
-## 3. Conversation-First Agent Architecture
+## 3. Wage Subsidy Co-Funding Mechanics
 
-### Core Principle: The LLM is an Orchestrator, Not the Source of Truth
+### The SME Affordability Gap
+Small and micro businesses (cafés, independent shops, repair workshops, digital studios) often operate on narrow margins and struggle to afford the UK National Living Wage (£11.44/hr). Without co-funding, they cannot create formal youth jobs or take on 16–18 year olds from low-income backgrounds.
 
-1. **No Direct Database Access**: The LLM (Gemini API with typed function-calling) never executes raw queries or has arbitrary database access. All data interactions occur strictly via allow-listed, Pydantic-validated FastAPI tools.
-2. **Deterministic Matching Authority**: Match scores are computed exclusively by the platform's deterministic matching engine ($0–100\%$). The agent only interprets filters and translates stored factor breakdowns into human-readable bullet points.
-3. **Explicit Confirmation Gatekeeper**: No write action (updating profiles, drafting/publishing vacancies, submitting applications) modifies database state directly from chat without generating a `PendingAction` record and requiring explicit user confirmation.
+### Council Top-up Formula
+- **Company Affordable Base Wage**: e.g., £7.00/hr
+- **Target Real Living Wage**: £11.44/hr
+- **Hourly Wage Gap**: £4.44/hr
+- **Council Subsidy Grant**: £4.50/hr top-up
+- **Youth Total Earnings**: £11.50/hr (Exceeds Real Living Wage)
 
-### Allow-Listed Tool Catalog
+### Grant Commitment Formula
+$$\text{Total Grant Allocation} = \text{Hourly Subsidy} \times \text{Hours/Week} \times \text{Duration (Weeks)}$$
+*Example: £4.50/hr × 16 hrs/wk × 24 weeks = **£1,728.00 total ring-fenced grant commitment**.*
 
-| Tool Name | Role | Type | Purpose & Safety Constraint |
-| :--- | :--- | :--- | :--- |
-| `get_my_youth_profile` | Youth | Read | Returns current user's profile and skills. |
-| `propose_youth_profile_update` | Youth | Write Proposal | Validates patch, creates `pending_actions` record, outputs `ConfirmationCard`. |
-| `search_published_opportunities` | Youth | Read | Queries published opportunities by keyword, type, workplace, location. |
-| `get_my_recommended_opportunities`| Youth | Read | Retrieves deterministic match rankings for authenticated youth. |
-| `get_opportunity_details` | Youth | Read | Fetches full public details of a published listing. |
-| `explain_opportunity_match` | Youth | Read | Explains match score points ($S_{\text{type}}, S_{\text{skills}}, S_{\text{location}}, S_{\text{avail}}$). |
-| `create_application_draft` | Youth | Write Proposal | Validates listing is open, creates `pending_actions` proposal for submission. |
-| `get_my_business_profile` | Business | Read | Returns organisation profile and contact info. |
-| `propose_business_profile_update` | Business | Write Proposal | Proposes organisation detail updates. |
-| `propose_opportunity` | Business | Write Proposal | Validates vacancy draft, generates preview card + confirmation card. |
-| `list_my_opportunities` | Business | Read | Lists opportunities owned by authenticated employer. |
-| `get_my_opportunity_details` | Business | Read | Returns owned opportunity details and applicant count. |
-| `search_candidates_for_my_opportunity`| Business | Read | Retrieves anonymized candidate matches for owned vacancy. |
-| `explain_candidate_match` | Business | Read | Explains deterministic match factors for candidate without exposing private info. |
-| `propose_opportunity_status_update`| Business | Write Proposal | Proposes changing status (e.g. closing or publishing). |
-
----
-
-## 4. Pending Action Confirmation State Machine
-
-```
-              ┌─────────────────────────┐
-              │ User sends chat message │
-              └────────────┬────────────┘
-                           │
-                           ▼
-              ┌─────────────────────────┐
-              │  Agent invokes propose  │
-              └────────────┬────────────┘
-                           │
-                           ▼
-        ┌──────────────────────────────────────┐
-        │ Insert PendingAction (status=pending)│
-        │ Output ConfirmationCard to Client UI │
-        └──────────────────┬───────────────────┘
-                           │
-         ┌─────────────────┴─────────────────┐
-         │                                   │
-         ▼                                   ▼
-  [User Clicks Confirm]               [User Clicks Cancel]
-  (or says "confirm/yes")             (or says "cancel/no")
-         │                                   │
-         ▼                                   ▼
-┌─────────────────────────────┐     ┌─────────────────────────────┐
-│ 1. Verify status is pending │     │ Set status = "cancelled"    │
-│ 2. Verify expires_at > now  │     │ Append cancellation note    │
-│ 3. Execute DB mutations     │     └─────────────────────────────┘
-│ 4. Set status = "confirmed" │
-│ 5. Record confirmed_at      │
-└─────────────────────────────┘
-```
+### State Machine & Budget Invariants
+1. **Creation (`POST /councils/allocations`)**:
+   - Deducts `allocated_amount` from `WageSubsidyScheme.remaining_budget`.
+   - Increments `Council.total_budget_spent`.
+   - Sets `Business.wage_subsidy_status = "active_subsidised"`.
+   - Sets allocation `status = "active"`.
+2. **Cancellation (`PATCH /councils/allocations/{id}` with `status = "cancelled"`)**:
+   - Refunds `allocated_amount` back to `WageSubsidyScheme.remaining_budget`.
+   - Decrements `Council.total_budget_spent`.
+   - If no other active subsidies exist, resets `Business.wage_subsidy_status = "eligible"`.
 
 ---
 
-## 5. Privacy, Safeguarding & ICO Compliance
+## 4. Geospatial & Deprivation Catchment Intelligence
 
-1. **Candidate Anonymization**: Candidate talent matches displayed to employers never expose personal emails, home addresses, phone numbers, or dates of birth. Candidates are identified by first name/initial, education stage, travel distance, and verified skills.
-2. **No Protected Characteristic Inferences**: The system strictly prohibits collecting, asking for, or inferring protected characteristics (race, religion, health/disability, sexual orientation).
-3. **No Automated Employment Decisions**: In accordance with UK ICO guidelines for AI recruitment, the AI provides drafting assistance and transparency explanations only. Final applications and interview selections remain fully under human control.
+### Spatial Projection
+Both `Council` and `Business` records store exact WGS84 coordinates (`latitude`, `longitude`) and PostGIS Geometry points.
+- On **PostgreSQL**: uses `ST_SetSRID(ST_MakePoint(lon, lat), 4326)`.
+- On **SQLite**: uses Haversine geodesic calculations.
 
----
-
-## 6. Deterministic Matching Engine (0–100 Score)
-
-$$\text{Total Score} = \min(100, S_{\text{type}} + S_{\text{skills}} + S_{\text{location}} + S_{\text{availability}} + S_{\text{qualification}})$$
-
-| Factor | Weight | Evaluation Logic |
-| :--- | :--- | :--- |
-| **Opportunity Type Match ($S_{\text{type}}$)** | 25 pts | **25 pts** if opportunity type matches youth preference list; **15 pts** if flexible; **5 pts** otherwise. |
-| **Skills Compatibility ($S_{\text{skills}}$)** | 35 pts | **25 pts** for required skills overlap + **10 pts** bonus for preferred skills overlap. |
-| **Location & Travel Radius ($S_{\text{location}}$)** | 25 pts | Remote: **25 pts**.<br>In-person: Geodesic distance $d$. If $d \le \text{max\_travel\_km}$, score $= 25 \times (1 - d/\text{max\_travel\_km})$. Beyond radius: **0 pts**. |
-| **Availability & Schedule ($S_{\text{availability}}$)** | 10 pts | Matches available days (e.g. Saturday/Sunday) against role schedule. |
-| **Qualifications ($S_{\text{qualification}}$)** | 5 pts bonus | **+5 pts** if youth has recorded GCSE/A-Level/BTEC qualifications. |
-
----
-
-## 7. Semantic Skill Catalogue
-
-The knowledge graph resolves profile and opportunity skill strings through a persisted catalogue before scoring or rendering. Resolution follows this order:
-
-1. Exact canonical-name or alias lookup.
-2. High-confidence Gemini embedding similarity.
-3. Structured Gemini classification for ambiguous or new skills.
-4. Literal canonical skill creation when semantic inference is unavailable.
-
-`skills`, `skill_aliases`, `skill_categories`, and `skill_relationships` retain model version, confidence, and provenance. Gemini supplies canonicalisation, intrinsic cross-sector categories, descriptions, aliases, and typed relationships; embeddings supply candidate similarity evidence; published opportunities remain the authority for `used_together` links and labour-market demand. An embedding-only graph edge must be a high-confidence reciprocal nearest-neighbour match. Explicit model relationships and opportunity co-occurrence bypass that embedding gate, preventing the similarity filter from suppressing stronger evidence. Category and skill embedding formats are versioned so changed representations can be refreshed and synchronized once.
-
-Skill categories and employment sectors are separate concepts. A graph node exposes one intrinsic `category` (for example, `Transferable Skills`) and zero or more `sectors` derived from published opportunities that require that skill. Sector filtering uses the evidence-backed `sectors` list and never the category label.
-
-Profile interests use the same semantic catalogue but remain a distinct graph node kind. The graph ranks shared categories, explicit model relationships, and high-confidence embedding evidence, retaining at most four skill links per interest to prevent dense clusters. Interests without qualifying evidence remain visible as standalone nodes rather than receiving fabricated connections.
-
-Users can expand any visible node on demand. Gemini returns a small set of narrower, practical skills or knowledge areas, which are persisted with explicit `builds_on` evidence and merged into the current graph as frontier nodes. Generated nodes can be expanded again for progressive exploration. Skill and category embeddings are refreshed in a background task so expansion latency is limited to the structured generation call.
+### Deprivation Overlay
+The Council platform incorporates UK **Index of Multiple Deprivation (IMD)** ward boundaries with youth population estimates and low-income family percentages (e.g. Chesham Waterside, High Wycombe Central). Councils can filter businesses that overlap these priority youth catchments.

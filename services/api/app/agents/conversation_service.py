@@ -10,8 +10,17 @@ from app.models import User, Conversation, ConversationMessage, PendingAction
 from app.agents.tool_executor import ToolExecutor
 from app.agents.youth_agent import YouthAgentOrchestrator
 from app.agents.business_agent import BusinessAgentOrchestrator
-from app.agents.prompts import YOUTH_AGENT_SYSTEM_PROMPT, BUSINESS_AGENT_SYSTEM_PROMPT
-from app.agents.tool_definitions import YOUTH_TOOL_DEFINITIONS, BUSINESS_TOOL_DEFINITIONS
+from app.agents.council_agent import CouncilAgentOrchestrator
+from app.agents.prompts import (
+    YOUTH_AGENT_SYSTEM_PROMPT,
+    BUSINESS_AGENT_SYSTEM_PROMPT,
+    COUNCIL_AGENT_SYSTEM_PROMPT,
+)
+from app.agents.tool_definitions import (
+    YOUTH_TOOL_DEFINITIONS,
+    BUSINESS_TOOL_DEFINITIONS,
+    COUNCIL_TOOL_DEFINITIONS,
+)
 from app.agents.schemas import AgentChatResponse, UICardPayload, PendingActionOut
 
 logger = logging.getLogger("uvicorn.error")
@@ -19,7 +28,7 @@ logger = logging.getLogger("uvicorn.error")
 
 class ConversationService:
     """Service orchestrating multi-turn agent conversations, tool calling,
-    and pending-action confirmation flows.
+    and pending-action confirmation flows across Youth, Business, and Council modes.
     """
 
     def __init__(self, db: Session, user: User):
@@ -27,7 +36,7 @@ class ConversationService:
         self.user = user
 
     def get_or_create_conversation(self, mode: str, conversation_id: Optional[uuid.UUID] = None) -> Conversation:
-        if mode not in ["youth", "business"]:
+        if mode not in ["youth", "business", "council"]:
             raise HTTPException(status_code=400, detail="Invalid conversation mode.")
 
         # Ensure user role matches conversation mode
@@ -159,6 +168,10 @@ class ConversationService:
             result = executor.confirm_opportunity_creation(str(action.id), publish_now=True)
         elif action.action_type == "update_opportunity_status":
             result = executor.confirm_opportunity_status_update(str(action.id))
+        elif action.action_type == "wage_subsidy_pledge":
+            result = executor.confirm_wage_subsidy_pledge(str(action.id))
+        elif action.action_type == "create_subsidy_scheme":
+            result = executor.confirm_wage_subsidy_scheme(str(action.id))
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported action type: {action.action_type}")
 
@@ -216,6 +229,9 @@ class ConversationService:
         if conv.mode == "youth":
             orch = YouthAgentOrchestrator(executor)
             text, cards, pending_raw = orch.process_message(message_text)
+        elif conv.mode == "council":
+            orch = CouncilAgentOrchestrator(executor)
+            text, cards, pending_raw = orch.process_message(message_text)
         else:
             orch = BusinessAgentOrchestrator(executor)
             text, cards, pending_raw = orch.process_message(message_text)
@@ -243,8 +259,16 @@ class ConversationService:
 
             client = genai.Client(api_key=settings.GEMINI_API_KEY)
             model_name = settings.GEMINI_MODEL or "gemini-3.6-flash"
-            system_prompt = YOUTH_AGENT_SYSTEM_PROMPT if conv.mode == "youth" else BUSINESS_AGENT_SYSTEM_PROMPT
-            tools_spec = YOUTH_TOOL_DEFINITIONS if conv.mode == "youth" else BUSINESS_TOOL_DEFINITIONS
+
+            if conv.mode == "youth":
+                system_prompt = YOUTH_AGENT_SYSTEM_PROMPT
+                tools_spec = YOUTH_TOOL_DEFINITIONS
+            elif conv.mode == "council":
+                system_prompt = COUNCIL_AGENT_SYSTEM_PROMPT
+                tools_spec = COUNCIL_TOOL_DEFINITIONS
+            else:
+                system_prompt = BUSINESS_AGENT_SYSTEM_PROMPT
+                tools_spec = BUSINESS_TOOL_DEFINITIONS
 
             # Format tool declarations for google-genai SDK
             declarations = []

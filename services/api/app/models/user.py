@@ -16,7 +16,7 @@ class User(Base):
     )
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    role = Column(String(50), nullable=False)  # 'youth' or 'business'
+    role = Column(String(50), nullable=False)  # 'youth', 'business', or 'council'
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
@@ -34,6 +34,12 @@ class User(Base):
     )
     business = relationship(
         "Business",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    council = relationship(
+        "Council",
         back_populates="user",
         uselist=False,
         cascade="all, delete-orphan",

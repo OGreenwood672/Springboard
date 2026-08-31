@@ -1,19 +1,30 @@
-# Springboard UK — Conversation-First Agent Platform
+# Springboard UK — Conversation-First Agent Platform & Council Wage Subsidy Platform
 
-Springboard is a conversation-first web platform dedicated to helping young people (aged 14–24) in the UK discover part-time jobs, work experience placements, and volunteering opportunities, while enabling local businesses and organisations to post listings, search candidates, and explore algorithmically matched talent.
+Springboard is a multi-sided economic platform dedicated to helping young people (aged 14–24) in the UK discover part-time jobs, work experience placements, and volunteering opportunities, while enabling local businesses to hire talent and empowering **UK Local Councils** to identify small businesses struggling with minimum wage affordability and subsidise youth wages in low-income family catchments.
 
 ---
 
-## 🚀 Tech Stack & Agent Architecture
+## 🏛️ New: Council Wage Subsidy & Spatial Platform (`apps/council`)
 
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, React Router 6, Lucide Icons
-  - **Agent Features**: Interactive AI Chat (`AgentChat`), dynamic embedded UI cards (`ConfirmationCard`, `OpportunityRecommendationCard`, `CandidateMatchCard`, `ProfileSummaryCard`, `OpportunityDraftCard`), and secondary form fallbacks.
-- **Backend**: Python 3.12+, FastAPI, Pydantic v2, SQLAlchemy 2, Alembic
-  - **Agent Engine**: Dual-mode agent orchestrator (`YouthAgent`, `BusinessAgent`, `ToolExecutor`, `ConversationService`) with typed Google Gemini function-calling and deterministic offline fallback.
+UK Local Councils can now:
+1. **Explore Geospatial Maps**: View local micro and small businesses color-coded by subsidy status (🟢 Active Subsidised, 🟡 Subsidy Eligible, 🔵 Pledged).
+2. **Layer Low-Income Ward Catchments**: Overlay Index of Multiple Deprivation (IMD) ward bubbles (e.g. Chesham Waterside, High Wycombe Central) with low-income family percentages.
+3. **Bridge Hourly Wage Gaps**: Compute the difference between SME affordable base wages (e.g. £7.00/hr) and the UK Real Living Wage (£11.44/hr) and pledge hourly top-up grants (e.g. £4.50/hr).
+4. **Govern Wage Subsidy Schemes**: Create ring-fenced fund schemes, set weekly hourly caps, and track live commitments.
+5. **Analyze Social Mobility ROI**: Measure local economic returns (£3.80x multiplier per £1 subsidised), youth retention rates, and hours paid at the Real Living Wage.
+6. **Consult the Council AI Policy Advisor**: Ask spatial economic questions and calculate multi-placement cohort budgets.
+
+---
+
+## 🚀 Tech Stack & Architecture
+
+- **Council Frontend (`apps/council`)**: React 18, TypeScript, Vite, Tailwind CSS, React Router 6, Lucide Icons, running on `http://localhost:5174`
+- **Web Frontend (`apps/web`)**: React 18, TypeScript, Vite, Tailwind CSS, React Router 6, `@xyflow/react`, running on `http://localhost:5173`
+- **Backend API (`services/api`)**: Python 3.12+, FastAPI, Pydantic v2, SQLAlchemy 2, Alembic, running on `http://localhost:8000`
 - **Database**: PostgreSQL 16 + PostGIS 3.4 (with cross-platform SQLite geodesic fallback for standalone & test runs).
-- **Matching Engine**: Deterministic, explainable 0–100% compatibility algorithm factoring opportunity type, skills overlap, travel radius (km), and availability.
-- **Authentication**: Local email/password with Argon2 password hashing and stateless Bearer JWTs.
-- **Architecture**: Monorepo managed with `pnpm` workspaces (`apps/web`, `packages/shared-types`, `services/api`).
+- **Matching & Wage Engine**: Deterministic, explainable matching algorithm and hourly wage subsidy ledger.
+- **Authentication**: Local email/password with Argon2 password hashing and stateless Bearer JWTs (`youth`, `business`, `council` roles).
+- **Monorepo**: Managed with `pnpm` workspaces (`apps/web`, `apps/council`, `packages/shared-types`, `services/api`).
 
 ---
 
@@ -22,22 +33,23 @@ Springboard is a conversation-first web platform dedicated to helping young peop
 ```
 springboard/
 ├── apps/
-│   └── web/                     # React 18 + Vite SPA
+│   ├── council/                 # Dedicated Council Wage Subsidy Portal (Port 5174)
+│   │   ├── src/features/map/    # Geospatial Wage Subsidy Map & Deprivation layers
+│   │   ├── src/features/subsidies/ # OfferSubsidyModal, SchemeCard, AllocationRow
+│   │   └── src/pages/           # CouncilDashboard, Map, EligibleCompanies, Schemes, Analytics
+│   └── web/                     # Youth & Employer Web App (Port 5173)
 │       ├── src/features/agent/  # Chat interface, composers & interactive UI cards
 │       └── src/pages/           # YouthCoachPage, BusinessAssistantPage & form fallbacks
 ├── packages/
-│   └── shared-types/            # Shared TypeScript domain contracts & agent DTOs
+│   └── shared-types/            # Shared TypeScript domain contracts, DTOs & Council types
 ├── services/
 │   └── api/                     # FastAPI backend & services
-│       ├── app/agents/          # Youth & Business agents, ToolExecutor, prompts, schemas
-│       ├── app/routers/         # Conversations, opportunities, profiles, applications
-│       └── app/services/        # Deterministic Matching Engine, Geocoding
+│       ├── app/models/          # Council, WageSubsidyScheme, WageSubsidyAllocation, Business, etc.
+│       ├── app/routers/         # /councils, /conversations, /opportunities, /profiles, /auth
+│       └── app/services/        # Matching Engine, Geocoding
 ├── infra/
 │   └── docker-compose.yml       # PostgreSQL 16 + PostGIS 3.4
 ├── docs/                        # Architecture, setup & decision records
-│   ├── setup.md
-│   ├── architecture.md
-│   └── decisions.md
 └── README.md
 ```
 
@@ -92,13 +104,13 @@ docker-compose -f infra/docker-compose.yml up -d
 cd services/api
 alembic upgrade head
 
-# Seed initial UK opportunities & demo accounts
+# Seed initial UK opportunities, demo councils, businesses & youth
 python -m app.seed
 ```
 
 #### Option B: Standalone / Zero-Config Mode
 
-If PostgreSQL is not running, the application automatically activates a local standalone SQLite database (`springboard.db`), creates all tables including conversations and pending actions, and seeds demo UK data on startup.
+If PostgreSQL is not running, the application automatically activates a local standalone SQLite database (`springboard.db`), creates all tables including councils, schemes, allocations, conversations, and pending actions, and seeds demo UK data on startup.
 
 ---
 
@@ -116,48 +128,64 @@ cd services/api
 - **Interactive Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
 
-#### Terminal 2 — Start the React Web Frontend:
+#### Terminal 2 — Start the Youth & Employer Web Frontend:
 
 ```bash
 # From the repository root
 npx pnpm --filter @springboard/web dev
 ```
 
-- **Web Application**: [http://localhost:5173](http://localhost:5173)
+- **Youth & Employer Web App**: [http://localhost:5173](http://localhost:5173)
+
+#### Terminal 3 — Start the Council Wage Subsidy Portal:
+
+```bash
+# From the repository root
+npx pnpm --filter @springboard/council dev
+```
+
+- **Council Wage Subsidy Portal**: [http://localhost:5174](http://localhost:5174)
 
 ---
 
-## ⚡ Demo Accounts & Agent Experiences
+## ⚡ Demo Accounts & Portals
 
-| Role | Email | Password | Primary Experience |
-| :--- | :--- | :--- | :--- |
-| **Young Person** | `youth@example.com` | `Password123!` | **Job Coach AI** (`/coach`) |
-| **Organisation** | `business@example.com` | `Password123!` | **Recruiter Assistant AI** (`/business/assistant`) |
+| Role | Email | Password | Portal URL | Primary Experience |
+| :--- | :--- | :--- | :--- | :--- |
+| **Local Council** | `council@example.com` | `Password123!` | [http://localhost:5174](http://localhost:5174) | **Buckinghamshire Wage Subsidy Map & Grants** |
+| **London Borough** | `camden@example.com` | `Password123!` | [http://localhost:5174](http://localhost:5174) | **Camden Deprivation & SME Grants** |
+| **Young Person** | `youth@example.com` | `Password123!` | [http://localhost:5173](http://localhost:5173) | **Job Coach AI & Living Wage Roles** |
+| **Local Business** | `business@example.com` | `Password123!` | [http://localhost:5173](http://localhost:5173) | **Recruiter AI & Subsidy Eligibility** |
 
-_Note: The frontend Sign-In page contains 1-click demo login buttons for rapid testing._
+_Note: Both the Council Portal and Web App Sign-In pages contain 1-click demo login buttons for rapid testing._
 
 ---
 
 ## 🧪 Running Automated Tests
 
-### Backend Automated Test Suite (Pytest — 24 Tests)
+### Backend Automated Test Suite (Pytest — 36 Tests)
 
 ```bash
 cd services/api
 .\.venv\Scripts\pytest.exe -v
 ```
 
-_Verifies authentication, role permissions, conversation models, pending action confirmations, tool authorization, deterministic matching, and agent endpoints._
+_Verifies council registration, geospatial map data, eligible business filters, wage subsidy scheme creation, budget deduction, grant status transitions, cancellation refunds, social mobility analytics, agent endpoints, and semantic skills._
 
-### Frontend Automated Test Suite (Vitest — 6 Tests)
+### Frontend Automated Test Suites
 
 ```bash
+# Run Council Portal Tests (Vitest)
+npx pnpm --filter @springboard/council test
+
+# Run Web App Tests (Vitest)
 npx pnpm --filter @springboard/web test
 ```
 
-### Frontend Production Build
+### Production Builds
 
 ```bash
+npx pnpm --filter @springboard/council build
 npx pnpm --filter @springboard/web build
 ```
 
@@ -165,6 +193,6 @@ npx pnpm --filter @springboard/web build
 
 ## 📖 Further Documentation
 
-- **[Detailed Setup Guide](docs/setup.md)**: Configuration details, Gemini API keys, and demo chat flows.
-- **[Architecture & Data Models](docs/architecture.md)**: Agent tool lifecycle, confirmation state machine, spatial PostGIS calculations, and privacy boundaries.
-- **[Architecture Decision Records](docs/decisions.md)**: ADRs covering agent tool execution, pending action gatekeeper, and privacy-preserving candidate search.
+- **[Detailed Setup Guide](docs/setup.md)**: Configuration details, Gemini API keys, Council workflows, and demo flows.
+- **[Architecture & Data Models](docs/architecture.md)**: Council data models, wage subsidy state machine, spatial PostGIS calculations, and privacy boundaries.
+- **[Architecture Decision Records](docs/decisions.md)**: ADRs covering council multi-tenant architecture, wage subsidy co-funding mechanics, and agent tool execution.

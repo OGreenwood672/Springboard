@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional
+from typing import Optional, Callable
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.youth_profile import YouthProfile
 from app.models.business import Business
+from app.models.council import Council
 
 security_scheme = HTTPBearer(auto_error=False)
 
@@ -82,27 +83,36 @@ def get_optional_current_user(
         return None
 
 
+def require_role(required_role: str) -> Callable:
+    """Factory dependency ensuring current user has a specific role."""
+    def _role_checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access forbidden: {required_role.capitalize()} account required",
+            )
+        return current_user
+    return _role_checker
+
+
 def require_youth_user(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("youth")),
 ) -> User:
     """Ensure current user has the 'youth' role."""
-    if current_user.role != "youth":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access forbidden: Youth account required",
-        )
     return current_user
 
 
 def require_business_user(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role("business")),
 ) -> User:
     """Ensure current user has the 'business' role."""
-    if current_user.role != "business":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access forbidden: Business account required",
-        )
+    return current_user
+
+
+def require_council_user(
+    current_user: User = Depends(require_role("council")),
+) -> User:
+    """Ensure current user has the 'council' role."""
     return current_user
 
 
@@ -133,3 +143,16 @@ def get_business(
         )
     return business
 
+
+def get_council(
+    current_user: User = Depends(require_council_user),
+    db: Session = Depends(get_db),
+) -> Council:
+    """Retrieve the Council belonging to the authenticated council user."""
+    council = db.query(Council).filter(Council.user_id == current_user.id).first()
+    if not council:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Council profile not found. Please complete council setup.",
+        )
+    return council

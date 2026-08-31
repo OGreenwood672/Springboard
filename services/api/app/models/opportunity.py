@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Float, Text, JSON, DateTime, ForeignKey
+from sqlalchemy import Column, String, Float, Boolean, Text, JSON, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base, GUID, PointGeometry
 from app.core.time import utc_now
@@ -47,6 +47,10 @@ class Opportunity(Base):
         index=True,
     )  # 'draft', 'published', 'closed'
 
+    # Wage Subsidy top-up indicator
+    wage_subsidy_applied = Column(Boolean, default=False, nullable=False)
+    hourly_wage_subsidised = Column(Float, nullable=True)
+
     # PostGIS Location & Coordinate fields
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
@@ -72,4 +76,7 @@ class Opportunity(Base):
         back_populates="opportunity",
         cascade="all, delete-orphan",
     )
-
+    subsidy_allocations = relationship(
+        "WageSubsidyAllocation",
+        back_populates="opportunity",
+    )

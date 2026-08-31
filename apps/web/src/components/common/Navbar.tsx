@@ -142,17 +142,14 @@ export const Navbar: React.FC = () => {
               )}
 
               {!isAuthenticated && (
-                <Link
-                  to="/opportunities"
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive("/opportunities")
-                      ? "bg-emerald-50 text-emerald-800 font-semibold"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                  }`}
+                <a
+                  href="http://localhost:5174"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-extrabold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors"
                 >
-                  <Briefcase className="w-4 h-4 text-emerald-600" />
-                  <span>Browse Opportunities</span>
-                </Link>
+                  <span>🏛️ Council Wage Portal</span>
+                </a>
               )}
             </nav>
           </div>
