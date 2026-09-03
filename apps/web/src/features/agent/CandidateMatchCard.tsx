@@ -6,6 +6,7 @@ import {
   GraduationCap,
   CheckCircle2,
   Shield,
+  Zap,
 } from "lucide-react";
 
 interface CandidateMatchCardProps {
@@ -20,27 +21,27 @@ export const CandidateMatchCard: React.FC<CandidateMatchCardProps> = ({
   const score = data.match_score;
 
   const getScoreBadge = (sc: number) => {
-    if (sc >= 80) return "bg-emerald-100 text-emerald-800 border-emerald-300";
-    if (sc >= 60) return "bg-indigo-100 text-indigo-800 border-indigo-300";
-    if (sc >= 40) return "bg-amber-100 text-amber-800 border-amber-300";
-    return "bg-slate-100 text-slate-800 border-slate-300";
+    if (sc >= 80) return "bg-emerald-500/20 text-emerald-300 border-emerald-500/40";
+    if (sc >= 60) return "bg-indigo-500/20 text-indigo-300 border-indigo-500/40";
+    if (sc >= 40) return "bg-amber-500/20 text-amber-300 border-amber-500/40";
+    return "bg-slate-800 text-slate-300 border-slate-700";
   };
 
   return (
-    <div className="my-2.5 rounded-2xl border border-indigo-200/80 bg-white p-4 shadow-2xs space-y-3">
+    <div className="my-2.5 rounded-2xl border border-slate-800 bg-slate-900/90 p-4 sm:p-5 shadow-xl space-y-3.5 text-slate-100">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 font-bold text-xs">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 font-bold text-xs">
             {data.candidate_name.charAt(0)}
           </div>
           <div>
-            <h4 className="text-sm font-bold text-slate-900">
+            <h4 className="text-sm font-black text-white">
               {data.candidate_name}
             </h4>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
+            <div className="flex items-center gap-2 text-xs text-slate-400">
               <span className="flex items-center gap-1">
-                <MapPin className="h-3 w-3 text-emerald-600" />
+                <MapPin className="h-3 w-3 text-emerald-400" />
                 {data.postcode_area || "UK"}
                 {data.distance_km !== null && data.distance_km !== undefined
                   ? ` (${data.distance_km} km)`
@@ -50,7 +51,7 @@ export const CandidateMatchCard: React.FC<CandidateMatchCardProps> = ({
                 <>
                   <span>•</span>
                   <span className="flex items-center gap-1">
-                    <GraduationCap className="h-3 w-3 text-slate-400" />
+                    <GraduationCap className="h-3 w-3 text-slate-500" />
                     {data.education_stage
                       .replace("_", " ")
                       .replace(/\b\w/g, (l) => l.toUpperCase())}
@@ -66,23 +67,23 @@ export const CandidateMatchCard: React.FC<CandidateMatchCardProps> = ({
             score,
           )}`}
         >
-          <Sparkles className="h-3 w-3 text-amber-500" />
+          <Sparkles className="h-3 w-3 text-amber-400" />
           <span>{score}% Match</span>
         </span>
       </div>
 
       {/* Matched Skills */}
       {data.matched_skills && data.matched_skills.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1 text-xs">
-          <span className="text-slate-500 font-semibold text-[11px] mr-1">
-            Matched Skills:
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-slate-400 font-mono text-[10px] uppercase font-bold mr-1">
+            Skills Overlap:
           </span>
           {data.matched_skills.map((s, idx) => (
             <span
               key={idx}
-              className="inline-flex items-center gap-0.5 rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 border border-indigo-100"
+              className="inline-flex items-center gap-1 rounded-lg bg-indigo-950/60 px-2 py-0.5 text-[11px] font-mono font-bold text-indigo-300 border border-indigo-500/30"
             >
-              <CheckCircle2 className="h-2.5 w-2.5 text-indigo-500" />
+              <CheckCircle2 className="h-2.5 w-2.5 text-indigo-400" />
               <span>{s}</span>
             </span>
           ))}
@@ -91,10 +92,10 @@ export const CandidateMatchCard: React.FC<CandidateMatchCardProps> = ({
 
       {/* Explanation Points */}
       {data.explanation_points && data.explanation_points.length > 0 && (
-        <div className="rounded-xl bg-slate-50 p-2.5 text-xs text-slate-700 space-y-1">
+        <div className="rounded-xl bg-slate-950 p-3 text-xs text-slate-300 space-y-1.5 border border-slate-800">
           {data.explanation_points.map((pt, idx) => (
             <p key={idx} className="flex items-start gap-1.5 leading-snug">
-              <span className="text-slate-400 font-bold">•</span>
+              <span className="text-indigo-400 font-bold">•</span>
               <span>{pt}</span>
             </p>
           ))}
@@ -102,10 +103,10 @@ export const CandidateMatchCard: React.FC<CandidateMatchCardProps> = ({
       )}
 
       {/* Privacy Notice & Footer */}
-      <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-400">
-        <span className="flex items-center gap-1">
-          <Shield className="h-3 w-3 text-emerald-600" />
-          <span>Privacy-safe candidate profile</span>
+      <div className="flex items-center justify-between border-t border-slate-800 pt-2.5 text-[11px] text-slate-400">
+        <span className="flex items-center gap-1 text-emerald-400 font-medium">
+          <Shield className="h-3 w-3" />
+          <span>ICO & GDPR Anonymized Profile</span>
         </span>
 
         {onExplainClick && (
@@ -114,9 +115,9 @@ export const CandidateMatchCard: React.FC<CandidateMatchCardProps> = ({
             onClick={() =>
               onExplainClick(data.opportunity_id, data.youth_profile_id)
             }
-            className="font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
+            className="font-bold text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
           >
-            Explain Match Factors
+            Explain Match Factors →
           </button>
         )}
       </div>

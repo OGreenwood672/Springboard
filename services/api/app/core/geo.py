@@ -16,8 +16,15 @@ UK_POSTCODE_COORDINATES = {
     # Buckinghamshire & Home Counties
     "HP5": (51.7050, -0.6120),  # Chesham
     "HP6": (51.6740, -0.6080),  # Amersham
-    "HP7": (51.6500, -0.6200),
-    "HP19": (51.8220, -0.8200),  # Aylesbury
+    "HP7": (51.6500, -0.6200),  # Amersham Old Town
+    "HP9": (51.6020, -0.6390),  # Beaconsfield
+    "HP11": (51.6285, -0.7480), # High Wycombe Central
+    "HP12": (51.6320, -0.7750), # High Wycombe West
+    "HP19": (51.8220, -0.8200), # Aylesbury North / Gatehouse
+    "HP20": (51.8150, -0.8100), # Aylesbury Central
+    "HP21": (51.8050, -0.8000), # Aylesbury South
+    "HP22": (51.7630, -0.7400), # Wendover
+    "SL7": (51.5710, -0.7760),  # Marlow
     "SL1": (51.5100, -0.5950),   # Slough
     "RG1": (51.4540, -0.9780),   # Reading
     "MK9": (52.0406, -0.7594),   # Milton Keynes

@@ -14,6 +14,7 @@ import {
   Filter,
   Building2,
   Calendar,
+  Zap,
 } from "lucide-react";
 
 export const AllocationsPage: React.FC = () => {
@@ -60,37 +61,38 @@ export const AllocationsPage: React.FC = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-slate-100">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 border border-sky-300">
+            <span className="text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-md bg-sky-500/15 text-sky-400 border border-sky-500/30 flex items-center gap-1.5">
+              <Zap className="w-3 h-3" />
               Council Grants Ledger
             </span>
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 mt-1">
+          <h1 className="text-2xl font-black text-white mt-1">
             Wage Subsidy Pledges & Allocations Ledger
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             Track individual hourly wage top-up contracts, active payment
             disbursements, and audit status.
           </p>
         </div>
 
-        <div className="bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-2xs text-xs font-semibold text-slate-600">
+        <div className="bg-slate-900/90 px-4 py-2 rounded-2xl border border-slate-800 shadow-xl text-xs font-mono text-slate-300">
           Total Committed:{" "}
-          <strong className="text-emerald-700">
+          <strong className="text-emerald-400 font-black">
             £{totalCommitted.toLocaleString()}
           </strong>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between gap-3">
+      <div className="bg-slate-900/90 p-4 rounded-3xl border border-slate-800 shadow-xl flex items-center justify-between gap-3 font-mono">
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <span className="text-xs font-bold text-slate-700">
+          <Filter className="w-4 h-4 text-slate-500" />
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             Filter By Status:
           </span>
         </div>
@@ -108,10 +110,10 @@ export const AllocationsPage: React.FC = () => {
               key={st}
               type="button"
               onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 statusFilter === st
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
+                  ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
+                  : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
               }`}
             >
               {st}
@@ -122,26 +124,25 @@ export const AllocationsPage: React.FC = () => {
 
       {/* Ledger Table */}
       {loading ? (
-        <div className="py-16">
+        <div className="py-20 flex justify-center">
           <LoadingSpinner size="md" text="Loading wage subsidy ledger..." />
         </div>
       ) : allocations.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 text-slate-500">
-          <FileSpreadsheet className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="font-bold text-slate-700">
+        <div className="bg-slate-900/90 rounded-3xl p-12 text-center border border-slate-800 text-slate-400">
+          <FileSpreadsheet className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+          <p className="font-bold text-white">
             No wage subsidy pledges found.
           </p>
-          <p className="text-xs mt-1">
-            Use the Map or Eligible Businesses tab to offer subsidies to local
-            employers.
+          <p className="text-xs mt-1 text-slate-500 font-mono">
+            Use the Map or Eligible Businesses tab to offer subsidies to local employers.
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="bg-slate-900/90 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse font-mono">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold uppercase text-slate-400">
+                <tr className="bg-slate-950 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   <th className="px-6 py-4">Business & Grant Scheme</th>
                   <th className="px-4 py-4">Subsidy Terms</th>
                   <th className="px-4 py-4">Total Amount</th>
@@ -150,29 +151,29 @@ export const AllocationsPage: React.FC = () => {
                   <th className="px-6 py-4 text-right">Status Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+              <tbody className="divide-y divide-slate-850 text-xs text-slate-300">
                 {allocations.map((alloc) => (
                   <tr
                     key={alloc.id}
-                    className="hover:bg-slate-50/80 transition-colors"
+                    className="hover:bg-slate-850/50 transition-colors"
                   >
                     {/* Business & Scheme */}
                     <td className="px-6 py-4">
-                      <span className="font-bold text-slate-900 text-sm block">
+                      <span className="font-bold text-white text-sm block font-sans">
                         {alloc.business_name}
                       </span>
-                      <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
+                      <span className="text-[11px] text-slate-400 font-mono block mt-0.5">
                         {alloc.scheme_title}
                       </span>
                     </td>
 
                     {/* Terms */}
                     <td className="px-4 py-4">
-                      <div className="space-y-0.5">
-                        <strong className="text-emerald-700">
+                      <div className="space-y-0.5 font-mono">
+                        <strong className="text-emerald-400">
                           £{alloc.hourly_subsidy.toFixed(2)} / hr top-up
                         </strong>
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-[11px] text-slate-400">
                           {alloc.max_hours_per_week} hrs/wk •{" "}
                           {alloc.duration_weeks} wks
                         </p>
@@ -181,7 +182,7 @@ export const AllocationsPage: React.FC = () => {
 
                     {/* Total Amount */}
                     <td className="px-4 py-4">
-                      <span className="text-sm font-extrabold text-slate-900">
+                      <span className="text-sm font-black text-white font-mono">
                         £{alloc.allocated_amount.toLocaleString()}
                       </span>
                     </td>
@@ -192,7 +193,7 @@ export const AllocationsPage: React.FC = () => {
                     </td>
 
                     {/* Notes */}
-                    <td className="px-4 py-4 max-w-xs text-[11px] text-slate-500">
+                    <td className="px-4 py-4 max-w-xs text-[11px] text-slate-400">
                       {alloc.notes || "Youth low-income wage top-up"}
                     </td>
 
@@ -203,7 +204,7 @@ export const AllocationsPage: React.FC = () => {
                           type="button"
                           onClick={() => handleStatusChange(alloc.id, "active")}
                           disabled={updatingId === alloc.id}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-2xs"
+                          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs shadow-md transition-all cursor-pointer"
                         >
                           Activate Grant
                         </button>
@@ -215,7 +216,7 @@ export const AllocationsPage: React.FC = () => {
                             handleStatusChange(alloc.id, "completed")
                           }
                           disabled={updatingId === alloc.id}
-                          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-[11px] shadow-2xs"
+                          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 cursor-pointer"
                         >
                           Mark Completed
                         </button>
@@ -228,7 +229,7 @@ export const AllocationsPage: React.FC = () => {
                               handleStatusChange(alloc.id, "cancelled")
                             }
                             disabled={updatingId === alloc.id}
-                            className="px-2.5 py-1.5 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 font-bold text-[11px]"
+                            className="px-2.5 py-1.5 rounded-xl border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 font-bold text-xs cursor-pointer"
                           >
                             Cancel / Refund
                           </button>

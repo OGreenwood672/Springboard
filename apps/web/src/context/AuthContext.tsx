@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { User, UserRole, YouthProfile, Business } from '@springboard/shared-types';
+import { User, UserRole, YouthProfile, Business, Council } from '@springboard/shared-types';
 import { authApi, RegisterPayload, LoginPayload } from '../api/auth';
 import { profilesApi } from '../api/profiles';
 import { businessesApi } from '../api/businesses';
+import { councilsApi } from '../api/councils';
 
 interface AuthContextType {
   user: User | null;
   profile: YouthProfile | null;
   business: Business | null;
+  council: Council | null;
   token: string | null;
   role: UserRole | null;
   isAuthenticated: boolean;
@@ -16,6 +18,7 @@ interface AuthContextType {
   register: (payload: RegisterPayload) => Promise<User>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
+  refreshCouncil: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<YouthProfile | null>(null);
   const [business, setBusiness] = useState<Business | null>(null);
+  const [council, setCouncil] = useState<Council | null>(null);
   const [token, setToken] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem(TOKEN_KEY);
@@ -53,6 +57,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch {
           setBusiness(null);
         }
+      } else if (currentUser.role === 'council') {
+        try {
+          const councilData = await councilsApi.getMyCouncil();
+          setCouncil(councilData);
+        } catch {
+          setCouncil(null);
+        }
       }
     } catch {
       if (typeof window !== 'undefined') {
@@ -62,6 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setProfile(null);
       setBusiness(null);
+      setCouncil(null);
     } finally {
       setIsLoading(false);
     }
@@ -99,6 +111,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch {
           setBusiness(null);
         }
+      } else if (response.user.role === 'council') {
+        try {
+          const c = await councilsApi.getMyCouncil();
+          setCouncil(c);
+        } catch {
+          setCouncil(null);
+        }
       }
 
       return response.user;
@@ -130,6 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setProfile(null);
     setBusiness(null);
+    setCouncil(null);
   };
 
   const refreshProfile = async () => {
@@ -150,12 +170,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const refreshCouncil = async () => {
+    if (user?.role === 'council') {
+      try {
+        const c = await councilsApi.getMyCouncil();
+        setCouncil(c);
+      } catch {
+        setCouncil(null);
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         profile,
         business,
+        council,
         token,
         role: user?.role || null,
         isAuthenticated: !!user && !!token,
@@ -164,6 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         refreshProfile,
+        refreshCouncil,
       }}
     >
       {children}

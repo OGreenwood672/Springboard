@@ -67,16 +67,16 @@ export const BusinessOnboardingPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-sm space-y-8">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-slate-100">
+      <div className="bg-slate-900/90 rounded-3xl p-6 sm:p-10 border border-slate-800 shadow-2xl space-y-8">
         <div>
-          <span className="text-xs font-bold text-indigo-800 uppercase tracking-wider">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-400">
             Employer Setup • Step 1 of 1
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-black text-white mt-1 tracking-tight">
             Register your organisation
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Post opportunities, review youth applicants, and connect with young
             local talent.
           </p>
@@ -85,7 +85,7 @@ export const BusinessOnboardingPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+              <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                 Organisation / Company Name *
               </label>
               <input
@@ -93,22 +93,22 @@ export const BusinessOnboardingPage: React.FC = () => {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Apex Tech Innovations Ltd"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+                placeholder="e.g. Chilterns Automation & AI Labs"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:bg-slate-900 focus:border-indigo-500 uk-focus-ring"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+              <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                 Organisation Sector / Type *
               </label>
               <select
                 value={organisationType}
                 onChange={(e) => setOrganisationType(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:bg-slate-900 focus:border-indigo-500 uk-focus-ring cursor-pointer"
               >
                 {ORG_TYPES.map((t) => (
-                  <option key={t} value={t}>
+                  <option key={t} value={t} className="bg-slate-900 text-white">
                     {t}
                   </option>
                 ))}
@@ -116,7 +116,7 @@ export const BusinessOnboardingPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+              <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                 Website (Optional)
               </label>
               <input
@@ -124,14 +124,14 @@ export const BusinessOnboardingPage: React.FC = () => {
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="https://example.co.uk"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:bg-slate-900 focus:border-indigo-500 uk-focus-ring"
               />
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="pt-6 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+              <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                 Contact Name *
               </label>
               <input
@@ -140,12 +140,12 @@ export const BusinessOnboardingPage: React.FC = () => {
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
                 placeholder="e.g. David Clarke"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:bg-slate-900 focus:border-indigo-500 uk-focus-ring"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+              <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                 Contact Email *
               </label>
               <input
@@ -154,14 +154,14 @@ export const BusinessOnboardingPage: React.FC = () => {
                 value={contactEmail}
                 onChange={(e) => setContactEmail(e.target.value)}
                 placeholder="contact@company.co.uk"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:bg-slate-900 focus:border-indigo-500 uk-focus-ring"
               />
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="pt-6 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+              <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                 Office / Premises Address
               </label>
               <input
@@ -169,26 +169,26 @@ export const BusinessOnboardingPage: React.FC = () => {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="e.g. 14 High Street"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:bg-slate-900 focus:border-indigo-500 uk-focus-ring"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+              <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                 UK Postcode
               </label>
               <input
                 type="text"
                 value={postcode}
                 onChange={(e) => setPostcode(e.target.value.toUpperCase())}
-                placeholder="e.g. HP5 2UR, EC1A"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring uppercase font-mono"
+                placeholder="e.g. HP5 2UR, HP11 1BB"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:bg-slate-900 focus:border-indigo-500 uk-focus-ring uppercase font-mono"
               />
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+          <div className="pt-6 border-t border-slate-800">
+            <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
               About your organisation
             </label>
             <textarea
@@ -196,15 +196,15 @@ export const BusinessOnboardingPage: React.FC = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Tell young candidates about your workplace culture, mission, and the support you provide to learners..."
-              className="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+              className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:bg-slate-900 focus:border-indigo-500 uk-focus-ring resize-none"
             />
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
+          <div className="pt-6 border-t border-slate-800 flex items-center justify-end">
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/20 disabled:opacity-50 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-xs font-black bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-400 hover:to-purple-400 shadow-lg shadow-indigo-950/50 disabled:opacity-50 transition-all cursor-pointer"
             >
               <span>
                 {saving ? "Creating profile..." : "Complete Organisation Setup"}

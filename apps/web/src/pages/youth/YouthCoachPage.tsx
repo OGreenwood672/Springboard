@@ -10,15 +10,17 @@ export const YouthCoachPage: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-      <AgentChat
-        mode="youth"
-        initialPrompts={suggestedPrompts}
-        formFallbackLink={{
-          label: "Manual Profile Form",
-          to: "/profile",
-        }}
-      />
+    <div className="w-full min-h-[calc(100vh-7rem)] bg-slate-950 py-3 text-slate-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <AgentChat
+          mode="youth"
+          initialPrompts={suggestedPrompts}
+          formFallbackLink={{
+            label: "Manual Profile Form",
+            to: "/profile",
+          }}
+        />
+      </div>
     </div>
   );
 };

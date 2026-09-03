@@ -60,3 +60,30 @@
 - **Context**: UK safeguarding principles, GDPR data minimization, and ICO guidance on automated recruitment require strict privacy boundaries when employers search for young candidates.
 - **Decision**: Candidate search tools and cards (`CandidateMatchCard`) expose only anonymized profile summaries (first name, education stage, general travel radius/distance, and matched skills). Private emails, home addresses, phone numbers, and protected characteristics are strictly excluded from agent tools.
 - **Consequences**: Full compliance with UK data protection laws and safeguarding standards; zero risk of automated discrimination or unauthorized candidate contact.
+
+---
+
+## ADR 008: Dedicated Council Wage Subsidy Portal (`apps/council`) on Port 5174
+
+- **Status**: Accepted
+- **Context**: Local authority council officers have fundamentally different administrative, statutory, and audit workflows from youth candidates and business owners. Mixing council administration into `apps/web` would risk UI clutter, role leakage, and complex route guards.
+- **Decision**: Scaffold a dedicated single-page application `apps/council` running independently on port 5174. It communicates with the same unified FastAPI backend (`services/api`) and consumes `@springboard/shared-types`, while enforcing strict `require_role("council")` authorization.
+- **Consequences**: Complete interface separation, specialized council UX (Command Center, schemes manager, allocations ledger, ROI analytics), and clear security boundaries.
+
+---
+
+## ADR 009: Geospatial Wage Subsidy Cartography with Leaflet & IMD Deprivation Catchments
+
+- **Status**: Accepted
+- **Context**: Councils must target wage subsidy grants at areas of acute economic need. Text-based tables alone cannot convey spatial proximity between low-income family wards and local SME employers.
+- **Decision**: Implement a Leaflet-based geospatial map engine with CartoDB Positron and Dark Matter tiles. Integrate UK Index of Multiple Deprivation (IMD) ward boundaries (Deciles 1–3) with youth population estimates and low-income household percentages. Render custom animated SVG pins reflecting wage gap metrics (`+£4.44/hr gap`).
+- **Consequences**: Intuitive spatial intelligence for council officers; immediate visualization of high-priority employment deserts; seamless 1-click transition from map pin inspection to AI subsidy assessment.
+
+---
+
+## ADR 010: Council AI Policy & Grant Director with Ring-Fenced Budget Invariants
+
+- **Status**: Accepted
+- **Context**: Allocating public funds to private employers requires strict statutory accountability, accurate economic forecasting, and zero budget overruns.
+- **Decision**: Implement a specialized `CouncilAgentOrchestrator` equipped with typed tools for SME subsidy search, cohort modeling (incorporating HM Treasury Green Book £3.80x multiplier), and grant drafting. Enforce an atomic state machine: creating an allocation automatically decrements the scheme's remaining budget; cancelling an allocation automatically refunds the amount and restores business eligibility.
+- **Consequences**: Complete mathematical and financial integrity; prevents over-allocation of council budgets; provides an automated audit trail for public scrutiny.

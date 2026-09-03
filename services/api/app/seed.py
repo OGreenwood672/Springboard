@@ -113,15 +113,15 @@ def seed_database(db: Session = None):
             db.add(user_youth_2)
             db.flush()
 
-            lat, lon = geocode_uk_postcode("EC1A 1BB")
+            lat, lon = geocode_uk_postcode("HP11 1BB")
             loc_geom = create_point_geom(lat, lon, is_postgres=is_postgres)
 
             youth_profile_2 = YouthProfile(
                 user_id=user_youth_2.id,
                 full_name="Sarah Jenkins",
-                preferred_location="Central London",
-                postcode="EC1A 1BB",
-                max_travel_km=10,
+                preferred_location="High Wycombe, Buckinghamshire",
+                postcode="HP11 1BB",
+                max_travel_km=15,
                 latitude=lat,
                 longitude=lon,
                 location_geom=loc_geom,
@@ -129,7 +129,7 @@ def seed_database(db: Session = None):
                 interests=["Charity", "Arts & Culture", "Environment"],
                 availability={"days": ["Wednesday", "Saturday"], "hours_per_week": 10},
                 education_stage="college",
-                bio="Dedicated college student keen to support local community initiatives and creative events.",
+                bio="Dedicated college student in High Wycombe keen to support local community initiatives and creative events.",
                 preferred_opportunity_types=["volunteering", "work_experience"],
                 is_low_income_eligible=True,
                 household_income_bracket="18k_25k",
@@ -150,7 +150,7 @@ def seed_database(db: Session = None):
                         )
                     )
 
-        # 4. Seed Businesses (Micro & Small Companies in Local Area)
+        # 4. Seed Businesses (Micro & Small Companies in Buckinghamshire)
         businesses_to_seed = [
             {
                 "email": "business@example.com",
@@ -159,8 +159,10 @@ def seed_database(db: Session = None):
                 "contact_name": "David Clarke",
                 "contact_email": "dave@apextech.co.uk",
                 "description": "Innovative digital software agency creating modern web platforms. Keen to hire young developers with wage subsidy support.",
-                "address": "14 High Street, Chesham",
+                "address": "14 High Street, Chesham, Buckinghamshire",
                 "postcode": "HP5 2UR",
+                "latitude": 51.7040,
+                "longitude": -0.6185,
                 "company_size": "micro",
                 "employee_count": 6,
                 "annual_turnover_bracket": "100k_500k",
@@ -174,19 +176,21 @@ def seed_database(db: Session = None):
             },
             {
                 "email": "techforward@example.com",
-                "name": "London Youth Horizons",
+                "name": "Buckinghamshire Youth Horizons & Community Trust",
                 "organisation_type": "Charity & Community",
                 "contact_name": "Elena Rostova",
-                "contact_email": "elena@youthhorizons.org.uk",
-                "description": "Non-profit organisation providing youth mentorship, creative workshops, and community events across the UK.",
-                "address": "88 Farringdon Road, London",
-                "postcode": "EC1A 1BB",
+                "contact_email": "elena@bucksyouthhorizons.org.uk",
+                "description": "Non-profit charitable trust delivering youth empowerment workshops, community events, and mentoring across High Wycombe and south Buckinghamshire.",
+                "address": "22 Queen Victoria Road, High Wycombe, Buckinghamshire",
+                "postcode": "HP11 1BB",
+                "latitude": 51.6265,
+                "longitude": -0.7460,
                 "company_size": "small",
                 "employee_count": 14,
                 "annual_turnover_bracket": "500k_1m",
                 "wage_subsidy_eligible": True,
                 "wage_subsidy_status": "eligible",
-                "low_income_catchment_score": 82.0,
+                "low_income_catchment_score": 88.0,
                 "hourly_wage_gap": 4.00,
                 "current_wage_offered": 7.50,
                 "target_wage": 11.50,
@@ -199,8 +203,10 @@ def seed_database(db: Session = None):
                 "contact_name": "Hannah Moore",
                 "contact_email": "hannah@chilternbakery.co.uk",
                 "description": "Independent high street bakery & café serving organic sourdough and pastries. Wants weekend student assistants but squeezed by living wage.",
-                "address": "29 High Street, Chesham",
+                "address": "29 High Street, Chesham, Buckinghamshire",
                 "postcode": "HP5 1BW",
+                "latitude": 51.7075,
+                "longitude": -0.6135,
                 "company_size": "micro",
                 "employee_count": 5,
                 "annual_turnover_bracket": "under_100k",
@@ -218,9 +224,11 @@ def seed_database(db: Session = None):
                 "organisation_type": "Retail & Trade",
                 "contact_name": "Marcus Vance",
                 "contact_email": "marcus@cheshambikes.org.uk",
-                "description": "Community bike repair shop offering cycling maintenance, upcycled bikes, and youth apprentice training.",
-                "address": "3 Waterside, Chesham",
+                "description": "Community bike repair shop offering cycling maintenance, upcycled bikes, and youth apprentice training in the Chess Valley.",
+                "address": "3 Waterside, Chesham, Buckinghamshire",
                 "postcode": "HP5 1PE",
+                "latitude": 51.6995,
+                "longitude": -0.6075,
                 "company_size": "micro",
                 "employee_count": 3,
                 "annual_turnover_bracket": "under_100k",
@@ -238,9 +246,11 @@ def seed_database(db: Session = None):
                 "organisation_type": "Green Energy & Trades",
                 "contact_name": "Simon Lee",
                 "contact_email": "simon@amershamgreentrades.co.uk",
-                "description": "Local domestic eco-retrofit, heat pump installation, and solar electrical repairs specialist offering green entry pathways.",
-                "address": "45 Sycamore Road, Amersham",
+                "description": "Local domestic eco-retrofit, heat pump installation, and solar electrical repairs specialist offering green entry pathways across the Chilterns.",
+                "address": "45 Sycamore Road, Amersham, Buckinghamshire",
                 "postcode": "HP6 5EQ",
+                "latitude": 51.6780,
+                "longitude": -0.6095,
                 "company_size": "small",
                 "employee_count": 9,
                 "annual_turnover_bracket": "500k_1m",
@@ -252,11 +262,215 @@ def seed_database(db: Session = None):
                 "target_wage": 11.50,
                 "youth_mentorship_commitment": True,
             },
+            {
+                "email": "camdensound@example.com",
+                "name": "Chiltern Sound & Creative Media Labs",
+                "organisation_type": "Creative & Media",
+                "contact_name": "Maya Lin",
+                "contact_email": "maya@chilternsound.co.uk",
+                "description": "Independent digital podcast studio, sound design suite, and youth creative media lab empowering young Buckinghamshire creators.",
+                "address": "8 St Mary's Way, Chesham, Buckinghamshire",
+                "postcode": "HP5 1HR",
+                "latitude": 51.7055,
+                "longitude": -0.6110,
+                "company_size": "micro",
+                "employee_count": 4,
+                "annual_turnover_bracket": "100k_500k",
+                "wage_subsidy_eligible": True,
+                "wage_subsidy_status": "eligible",
+                "low_income_catchment_score": 86.0,
+                "hourly_wage_gap": 4.14,
+                "current_wage_offered": 7.30,
+                "target_wage": 11.44,
+                "youth_mentorship_commitment": True,
+            },
+            {
+                "email": "wycombejoinery@example.com",
+                "name": "High Wycombe Precision Craft & Joinery",
+                "organisation_type": "Manufacturing & Trades",
+                "contact_name": "Arthur Pendelton",
+                "contact_email": "arthur@wycombejoinery.co.uk",
+                "description": "Heritage bespoke furniture and architectural woodwork workshop training youth in CAD joinery, lathe work, and timber restoration in High Wycombe.",
+                "address": "8 Desborough Park Road, High Wycombe, Buckinghamshire",
+                "postcode": "HP11 2HE",
+                "latitude": 51.6295,
+                "longitude": -0.7510,
+                "company_size": "small",
+                "employee_count": 11,
+                "annual_turnover_bracket": "500k_1m",
+                "wage_subsidy_eligible": True,
+                "wage_subsidy_status": "eligible",
+                "low_income_catchment_score": 86.0,
+                "hourly_wage_gap": 3.94,
+                "current_wage_offered": 7.50,
+                "target_wage": 11.44,
+                "youth_mentorship_commitment": True,
+            },
+            {
+                "email": "chilterncare@example.com",
+                "name": "Chiltern Care & Wellbeing Hub",
+                "organisation_type": "Healthcare & Social Care",
+                "contact_name": "Denise Cooper",
+                "contact_email": "denise@chilterncarehub.org.uk",
+                "description": "Community care and day activity centre providing companion support and activities for elder residents across the Chess Valley.",
+                "address": "52 Broad Street, Chesham, Buckinghamshire",
+                "postcode": "HP5 1DH",
+                "latitude": 51.7120,
+                "longitude": -0.6105,
+                "company_size": "small",
+                "employee_count": 16,
+                "annual_turnover_bracket": "500k_1m",
+                "wage_subsidy_eligible": True,
+                "wage_subsidy_status": "eligible",
+                "low_income_catchment_score": 90.0,
+                "hourly_wage_gap": 3.44,
+                "current_wage_offered": 8.00,
+                "target_wage": 11.44,
+                "youth_mentorship_commitment": True,
+            },
+            {
+                "email": "holbornfarm@example.com",
+                "name": "Aylesbury Vale Agri-Tech & Vertical Greens",
+                "organisation_type": "Agriculture & Sustainability",
+                "contact_name": "Liam Gallagher",
+                "contact_email": "liam@aylesburyverticalgreens.co.uk",
+                "description": "Modern controlled-environment vertical farm growing sustainable salad greens, micro-herbs, and offering agricultural STEM training across the Vale of Aylesbury.",
+                "address": "14 Cambridge Street, Aylesbury, Buckinghamshire",
+                "postcode": "HP20 1RS",
+                "latitude": 51.8160,
+                "longitude": -0.8090,
+                "company_size": "micro",
+                "employee_count": 5,
+                "annual_turnover_bracket": "100k_500k",
+                "wage_subsidy_eligible": True,
+                "wage_subsidy_status": "eligible",
+                "low_income_catchment_score": 84.0,
+                "hourly_wage_gap": 4.20,
+                "current_wage_offered": 7.30,
+                "target_wage": 11.50,
+                "youth_mentorship_commitment": True,
+            },
+            {
+                "email": "amershamstem@example.com",
+                "name": "Amersham Robotics & STEM Academy",
+                "organisation_type": "Technology & Education",
+                "contact_name": "Dr. Keith Evans",
+                "contact_email": "keith@amershamstem.co.uk",
+                "description": "Educational robotics workshop and makerspace teaching local young people programming, CAD 3D-printing, and circuit design.",
+                "address": "18 Hill Avenue, Amersham, Buckinghamshire",
+                "postcode": "HP6 5BL",
+                "latitude": 51.6745,
+                "longitude": -0.6045,
+                "company_size": "micro",
+                "employee_count": 4,
+                "annual_turnover_bracket": "100k_500k",
+                "wage_subsidy_eligible": True,
+                "wage_subsidy_status": "eligible",
+                "low_income_catchment_score": 78.0,
+                "hourly_wage_gap": 4.44,
+                "current_wage_offered": 7.00,
+                "target_wage": 11.44,
+                "youth_mentorship_commitment": True,
+            },
+            {
+                "email": "marlowdesign@example.com",
+                "name": "Marlow Eco-Packaging & Design Studio",
+                "organisation_type": "Creative & Design",
+                "contact_name": "Oliver Sterling",
+                "contact_email": "oliver@marlowdesign.co.uk",
+                "description": "Sustainable industrial packaging design studio innovating bio-degradable cartons, eco-friendly consumer branding, and circular materials.",
+                "address": "17 High Street, Marlow, Buckinghamshire",
+                "postcode": "SL7 1AU",
+                "latitude": 51.5710,
+                "longitude": -0.7760,
+                "company_size": "micro",
+                "employee_count": 5,
+                "annual_turnover_bracket": "100k_500k",
+                "wage_subsidy_eligible": True,
+                "wage_subsidy_status": "eligible",
+                "low_income_catchment_score": 76.0,
+                "hourly_wage_gap": 4.14,
+                "current_wage_offered": 7.30,
+                "target_wage": 11.44,
+                "youth_mentorship_commitment": True,
+            },
+            {
+                "email": "wendovertourism@example.com",
+                "name": "Wendover Forest Eco-Tourism & Heritage Hub",
+                "organisation_type": "Hospitality & Tourism",
+                "contact_name": "Claire Thornton",
+                "contact_email": "claire@wendoverhub.co.uk",
+                "description": "Chilterns National Landscape visitor hub and eco-outdoor education center offering hospitality, park ranger, and trail guidance opportunities.",
+                "address": "5 High Street, Wendover, Buckinghamshire",
+                "postcode": "HP22 6DU",
+                "latitude": 51.7635,
+                "longitude": -0.7405,
+                "company_size": "micro",
+                "employee_count": 4,
+                "annual_turnover_bracket": "100k_500k",
+                "wage_subsidy_eligible": True,
+                "wage_subsidy_status": "eligible",
+                "low_income_catchment_score": 80.0,
+                "hourly_wage_gap": 3.94,
+                "current_wage_offered": 7.50,
+                "target_wage": 11.44,
+                "youth_mentorship_commitment": True,
+            },
+            {
+                "email": "aylesburyrobotics@example.com",
+                "name": "Aylesbury Precision Automation & Robotics",
+                "organisation_type": "Manufacturing & Engineering",
+                "contact_name": "Graham Fletcher",
+                "contact_email": "graham@aylesburyrobotics.co.uk",
+                "description": "Advanced mechatronics and industrial automation workshop delivering CNC programming and robotic assembly apprenticeships in Aylesbury.",
+                "address": "6 Gatehouse Way, Aylesbury, Buckinghamshire",
+                "postcode": "HP19 8DB",
+                "latitude": 51.8240,
+                "longitude": -0.8285,
+                "company_size": "small",
+                "employee_count": 12,
+                "annual_turnover_bracket": "500k_1m",
+                "wage_subsidy_eligible": True,
+                "wage_subsidy_status": "eligible",
+                "low_income_catchment_score": 85.0,
+                "hourly_wage_gap": 4.44,
+                "current_wage_offered": 7.00,
+                "target_wage": 11.44,
+                "youth_mentorship_commitment": True,
+            },
+            {
+                "email": "beaconsfieldcare@example.com",
+                "name": "Chilterns Bio-Veterinary & Animal Care",
+                "organisation_type": "Healthcare & Veterinary",
+                "contact_name": "Dr. Fiona Campbell",
+                "contact_email": "fiona@chilternsanimalcare.co.uk",
+                "description": "Modern veterinary clinic, canine hydrotherapy suite, and animal wellbeing sanctuary providing vocational training in animal husbandry.",
+                "address": "34 London End, Beaconsfield, Buckinghamshire",
+                "postcode": "HP9 2JH",
+                "latitude": 51.6025,
+                "longitude": -0.6390,
+                "company_size": "micro",
+                "employee_count": 6,
+                "annual_turnover_bracket": "100k_500k",
+                "wage_subsidy_eligible": True,
+                "wage_subsidy_status": "eligible",
+                "low_income_catchment_score": 75.0,
+                "hourly_wage_gap": 3.64,
+                "current_wage_offered": 7.80,
+                "target_wage": 11.44,
+                "youth_mentorship_commitment": True,
+            },
         ]
 
         seeded_businesses = []
         for b_data in businesses_to_seed:
             user_b = db.query(User).filter(User.email == b_data["email"]).first()
+            lat = b_data.get("latitude")
+            lon = b_data.get("longitude")
+            if lat is None or lon is None:
+                lat, lon = geocode_uk_postcode(b_data["postcode"])
+            loc_geom = create_point_geom(lat, lon, is_postgres=is_postgres)
+
             if not user_b:
                 user_b = User(
                     email=b_data["email"],
@@ -265,9 +479,6 @@ def seed_database(db: Session = None):
                 )
                 db.add(user_b)
                 db.flush()
-
-                lat, lon = geocode_uk_postcode(b_data["postcode"])
-                loc_geom = create_point_geom(lat, lon, is_postgres=is_postgres)
 
                 biz = Business(
                     user_id=user_b.id,
@@ -296,12 +507,45 @@ def seed_database(db: Session = None):
                 db.flush()
                 seeded_businesses.append(biz)
             else:
-                seeded_businesses.append(user_b.business)
+                biz = user_b.business
+                if biz:
+                    biz.name = b_data["name"]
+                    biz.organisation_type = b_data["organisation_type"]
+                    biz.contact_name = b_data["contact_name"]
+                    biz.contact_email = b_data["contact_email"]
+                    biz.description = b_data["description"]
+                    biz.address = b_data["address"]
+                    biz.postcode = b_data["postcode"]
+                    biz.latitude = lat
+                    biz.longitude = lon
+                    biz.location_geom = loc_geom
+                    biz.company_size = b_data["company_size"]
+                    biz.employee_count = b_data["employee_count"]
+                    biz.annual_turnover_bracket = b_data["annual_turnover_bracket"]
+                    biz.wage_subsidy_eligible = b_data["wage_subsidy_eligible"]
+                    biz.wage_subsidy_status = b_data["wage_subsidy_status"]
+                    biz.low_income_catchment_score = b_data["low_income_catchment_score"]
+                    biz.hourly_wage_gap = b_data["hourly_wage_gap"]
+                    biz.current_wage_offered = b_data["current_wage_offered"]
+                    biz.target_wage = b_data["target_wage"]
+                    biz.youth_mentorship_commitment = b_data["youth_mentorship_commitment"]
+                    db.flush()
+                seeded_businesses.append(biz)
 
         biz_1 = seeded_businesses[0]
         biz_2 = seeded_businesses[1]
         biz_3 = seeded_businesses[2]
         biz_4 = seeded_businesses[3]
+        biz_5 = seeded_businesses[4]
+        biz_6 = seeded_businesses[5]
+        biz_7 = seeded_businesses[6]
+        biz_8 = seeded_businesses[7]
+        biz_9 = seeded_businesses[8]
+        biz_10 = seeded_businesses[9]
+        biz_11 = seeded_businesses[10]
+        biz_12 = seeded_businesses[11]
+        biz_13 = seeded_businesses[12]
+        biz_14 = seeded_businesses[13]
 
         # 5. Seed Councils
         councils_to_seed = [
@@ -439,93 +683,262 @@ def seed_database(db: Session = None):
             db.flush()
 
         # 8. Seed Opportunities
-        existing_opps = db.query(Opportunity).count()
-        if existing_opps == 0:
-            opportunities_data = [
-                {
-                    "business_id": biz_1.id,
-                    "title": "Weekend Junior Web Developer",
-                    "opportunity_type": "part_time_job",
-                    "description": "Join our friendly engineering team to build web components and client landing pages. Fully subsidized wage at the Real Living Wage through Buckinghamshire Council.",
-                    "required_skills": ["Python", "Problem Solving"],
-                    "preferred_skills": ["Teamwork", "HTML/CSS"],
-                    "location_name": "Chesham, Buckinghamshire",
-                    "postcode": "HP5 2UR",
-                    "workplace_type": "hybrid",
-                    "pay_info": "£11.44 / hour (Council Subsidised)",
-                    "hours_or_commitment": "8-16 hours / week",
-                    "deadline": utc_now() + timedelta(days=30),
-                    "status": "published",
-                    "wage_subsidy_applied": True,
-                    "hourly_wage_subsidised": 4.50,
-                },
-                {
-                    "business_id": biz_1.id,
-                    "title": "Summer Technology Work Experience Placement",
-                    "opportunity_type": "work_experience",
-                    "description": "Hands-on two-week summer placement shadowing full-stack software engineers, product managers, and UI designers on live client projects.",
-                    "required_skills": ["Python", "Customer Service"],
-                    "preferred_skills": ["Teamwork"],
-                    "location_name": "Remote & Chesham HQ",
-                    "postcode": "HP5 2UR",
-                    "workplace_type": "remote",
-                    "pay_info": "Unpaid (Travel & lunch reimbursed)",
-                    "hours_or_commitment": "2 weeks full-time (July)",
-                    "deadline": utc_now() + timedelta(days=45),
-                    "status": "published",
-                },
-                {
-                    "business_id": biz_2.id,
-                    "title": "Youth Community Event Assistant",
-                    "opportunity_type": "volunteering",
-                    "description": "Help organize vibrant community workshops, assist with event registration, and coordinate youth art showcases across Central London.",
-                    "required_skills": ["Communication", "Event Planning"],
-                    "preferred_skills": ["Social Media", "First Aid"],
-                    "location_name": "Central London",
-                    "postcode": "EC1A 1BB",
-                    "workplace_type": "in_person",
-                    "pay_info": "Voluntary (Expenses covered)",
-                    "hours_or_commitment": "4-6 hours on event Saturdays",
-                    "deadline": utc_now() + timedelta(days=60),
-                    "status": "published",
-                },
-                {
-                    "business_id": biz_3.id,
-                    "title": "Weekend Café & Customer Assistant",
-                    "opportunity_type": "part_time_job",
-                    "description": "Serve artisan coffee, assist with bakery display, and learn barista skills in a supportive, friendly local café. Subsidised wage for local youth.",
-                    "required_skills": ["Customer Service", "Teamwork"],
-                    "preferred_skills": ["Cash Handling"],
-                    "location_name": "Chesham High Street",
-                    "postcode": "HP5 1BW",
-                    "workplace_type": "in_person",
-                    "pay_info": "£11.44 / hour (Subsidy Eligible)",
-                    "hours_or_commitment": "8-12 hours / week (Weekends)",
-                    "deadline": utc_now() + timedelta(days=25),
-                    "status": "published",
-                },
-                {
-                    "business_id": biz_4.id,
-                    "title": "Junior Bicycle Mechanic Trainee",
-                    "opportunity_type": "part_time_job",
-                    "description": "Learn cycle diagnostics, gear tuning, brake replacement, and workshop safety with an experienced master technician.",
-                    "required_skills": ["Problem Solving", "Communication"],
-                    "preferred_skills": ["Teamwork"],
-                    "location_name": "Waterside, Chesham",
-                    "postcode": "HP5 1PE",
-                    "workplace_type": "in_person",
-                    "pay_info": "£11.44 / hour (Pledged Council Subsidy)",
-                    "hours_or_commitment": "12 hours / week",
-                    "deadline": utc_now() + timedelta(days=40),
-                    "status": "published",
-                },
-            ]
+        opportunities_data = [
+            {
+                "business_id": biz_1.id,
+                "title": "Weekend Junior Web Developer",
+                "opportunity_type": "part_time_job",
+                "description": "Join our friendly engineering team to build web components and client landing pages. Fully subsidized wage at the Real Living Wage through Buckinghamshire Council.",
+                "required_skills": ["Python", "Problem Solving"],
+                "preferred_skills": ["Teamwork", "HTML/CSS"],
+                "location_name": "Chesham, Buckinghamshire",
+                "postcode": "HP5 2UR",
+                "workplace_type": "hybrid",
+                "pay_info": "£11.44 / hour (Council Subsidised)",
+                "hours_or_commitment": "8-16 hours / week",
+                "deadline": utc_now() + timedelta(days=30),
+                "status": "published",
+                "wage_subsidy_applied": True,
+                "hourly_wage_subsidised": 4.50,
+            },
+            {
+                "business_id": biz_1.id,
+                "title": "Summer Technology Work Experience Placement",
+                "opportunity_type": "work_experience",
+                "description": "Hands-on two-week summer placement shadowing full-stack software engineers, product managers, and UI designers on live client projects.",
+                "required_skills": ["Python", "Customer Service"],
+                "preferred_skills": ["Teamwork"],
+                "location_name": "Remote & Chesham HQ",
+                "postcode": "HP5 2UR",
+                "workplace_type": "remote",
+                "pay_info": "Unpaid (Travel & lunch reimbursed)",
+                "hours_or_commitment": "2 weeks full-time (July)",
+                "deadline": utc_now() + timedelta(days=45),
+                "status": "published",
+            },
+            {
+                "business_id": biz_2.id,
+                "title": "Youth Community Outreach & Mentorship Assistant",
+                "opportunity_type": "volunteering",
+                "description": "Help organize vibrant youth empowerment workshops, assist with event registration, and support peer-to-peer mentoring across High Wycombe and south Buckinghamshire.",
+                "required_skills": ["Communication", "Event Planning"],
+                "preferred_skills": ["Social Media", "First Aid"],
+                "location_name": "High Wycombe, Buckinghamshire",
+                "postcode": "HP11 1BB",
+                "workplace_type": "in_person",
+                "pay_info": "Voluntary (Expenses covered)",
+                "hours_or_commitment": "4-6 hours on event Saturdays",
+                "deadline": utc_now() + timedelta(days=60),
+                "status": "published",
+            },
+            {
+                "business_id": biz_2.id,
+                "title": "Creative Youth Workshop & Event Coordinator",
+                "opportunity_type": "part_time_job",
+                "description": "Coordinate weekly youth arts, digital media, and social mobility workshops for local teenagers in High Wycombe. Council co-funded living wage.",
+                "required_skills": ["Communication", "Teamwork"],
+                "preferred_skills": ["Event Planning"],
+                "location_name": "High Wycombe, Buckinghamshire",
+                "postcode": "HP11 1BB",
+                "workplace_type": "in_person",
+                "pay_info": "£11.50 / hour (Subsidy Eligible)",
+                "hours_or_commitment": "8-12 hours / week",
+                "deadline": utc_now() + timedelta(days=40),
+                "status": "published",
+            },
+            {
+                "business_id": biz_3.id,
+                "title": "Weekend Café & Customer Assistant",
+                "opportunity_type": "part_time_job",
+                "description": "Serve artisan coffee, assist with bakery display, and learn barista skills in a supportive, friendly local café. Subsidised wage for local youth.",
+                "required_skills": ["Customer Service", "Teamwork"],
+                "preferred_skills": ["Cash Handling"],
+                "location_name": "Chesham High Street, Buckinghamshire",
+                "postcode": "HP5 1BW",
+                "workplace_type": "in_person",
+                "pay_info": "£11.44 / hour (Subsidy Eligible)",
+                "hours_or_commitment": "8-12 hours / week (Weekends)",
+                "deadline": utc_now() + timedelta(days=25),
+                "status": "published",
+            },
+            {
+                "business_id": biz_4.id,
+                "title": "Junior Bicycle Mechanic Trainee",
+                "opportunity_type": "part_time_job",
+                "description": "Learn cycle diagnostics, gear tuning, brake replacement, and workshop safety with an experienced master technician in the Chess Valley.",
+                "required_skills": ["Problem Solving", "Communication"],
+                "preferred_skills": ["Teamwork"],
+                "location_name": "Waterside, Chesham, Buckinghamshire",
+                "postcode": "HP5 1PE",
+                "workplace_type": "in_person",
+                "pay_info": "£11.44 / hour (Pledged Council Subsidy)",
+                "hours_or_commitment": "12 hours / week",
+                "deadline": utc_now() + timedelta(days=40),
+                "status": "published",
+            },
+            {
+                "business_id": biz_5.id,
+                "title": "Solar Energy & Heat Pump Retrofit Trainee",
+                "opportunity_type": "apprenticeship",
+                "description": "Kickstart your green trade career shadowing qualified electrical engineers on domestic solar PV installations and air-source heat pump retrofits across Chiltern district.",
+                "required_skills": ["Problem Solving", "Teamwork"],
+                "preferred_skills": ["First Aid", "Communication"],
+                "location_name": "Amersham & Chilterns, Buckinghamshire",
+                "postcode": "HP6 5EQ",
+                "workplace_type": "in_person",
+                "pay_info": "£11.50 / hour (Council Green Subsidy)",
+                "hours_or_commitment": "16 hours / week",
+                "deadline": utc_now() + timedelta(days=35),
+                "status": "published",
+            },
+            {
+                "business_id": biz_6.id,
+                "title": "Digital Audio Mixing & Podcast Production Assistant",
+                "opportunity_type": "part_time_job",
+                "description": "Manage recording studio sessions, assist with DAW audio mixing, set up microphones, and edit weekly creative youth podcasts in Chesham.",
+                "required_skills": ["Communication", "Social Media"],
+                "preferred_skills": ["Problem Solving"],
+                "location_name": "Chesham, Buckinghamshire",
+                "postcode": "HP5 1HR",
+                "workplace_type": "in_person",
+                "pay_info": "£11.44 / hour (Subsidy Eligible)",
+                "hours_or_commitment": "12-16 hours / week",
+                "deadline": utc_now() + timedelta(days=45),
+                "status": "published",
+            },
+            {
+                "business_id": biz_7.id,
+                "title": "Apprentice Architectural Joiner & CAD Assistant",
+                "opportunity_type": "apprenticeship",
+                "description": "Learn fine woodworking, timber joinery, bespoke furniture craft, and computerized CAD drafting in High Wycombe's historic furniture quarter.",
+                "required_skills": ["Problem Solving", "Teamwork"],
+                "preferred_skills": ["Mathematics"],
+                "location_name": "High Wycombe, Buckinghamshire",
+                "postcode": "HP11 2HE",
+                "workplace_type": "in_person",
+                "pay_info": "£11.44 / hour (Subsidy Eligible)",
+                "hours_or_commitment": "16 hours / week",
+                "deadline": utc_now() + timedelta(days=30),
+                "status": "published",
+            },
+            {
+                "business_id": biz_8.id,
+                "title": "Trainee Wellbeing & Activities Companion",
+                "opportunity_type": "part_time_job",
+                "description": "Support community wellbeing sessions, organize arts and crafts, and provide friendship and companion care to elder citizens in Chesham.",
+                "required_skills": ["Communication", "Customer Service"],
+                "preferred_skills": ["First Aid"],
+                "location_name": "Chesham Broad Street, Buckinghamshire",
+                "postcode": "HP5 1DH",
+                "workplace_type": "in_person",
+                "pay_info": "£11.44 / hour (Council Co-Funded)",
+                "hours_or_commitment": "12 hours / week",
+                "deadline": utc_now() + timedelta(days=50),
+                "status": "published",
+            },
+            {
+                "business_id": biz_9.id,
+                "title": "Hydroponic Cultivation & Vertical Farm Trainee",
+                "opportunity_type": "part_time_job",
+                "description": "Work in our vertical indoor hydroponic farm in Aylesbury monitoring nutrient water balances, harvesting microgreens, and managing eco-friendly delivery logistics.",
+                "required_skills": ["Teamwork", "Problem Solving"],
+                "preferred_skills": ["Customer Service"],
+                "location_name": "Aylesbury, Buckinghamshire",
+                "postcode": "HP20 1RS",
+                "workplace_type": "in_person",
+                "pay_info": "£11.50 / hour (Subsidy Eligible)",
+                "hours_or_commitment": "10-14 hours / week",
+                "deadline": utc_now() + timedelta(days=30),
+                "status": "published",
+            },
+            {
+                "business_id": biz_10.id,
+                "title": "STEM Coding & Robotics Workshop Mentor",
+                "opportunity_type": "part_time_job",
+                "description": "Guide local 8-14 year olds through beginner Python coding, 3D printing, and Lego robotics challenges in our Amersham makerspace.",
+                "required_skills": ["Python", "Communication"],
+                "preferred_skills": ["Problem Solving"],
+                "location_name": "Amersham Hill Avenue, Buckinghamshire",
+                "postcode": "HP6 5BL",
+                "workplace_type": "in_person",
+                "pay_info": "£11.44 / hour (Subsidy Eligible)",
+                "hours_or_commitment": "8-12 hours / weekend",
+                "deadline": utc_now() + timedelta(days=28),
+                "status": "published",
+            },
+            {
+                "business_id": biz_11.id,
+                "title": "Junior Sustainable Packaging Designer",
+                "opportunity_type": "apprenticeship",
+                "description": "Collaborate with senior packaging designers on CAD die-line prototypes, sustainable cardboard origami, and eco-branding for FMCG clients in Marlow.",
+                "required_skills": ["Problem Solving", "Customer Service"],
+                "preferred_skills": ["Teamwork"],
+                "location_name": "Marlow High Street, Buckinghamshire",
+                "postcode": "SL7 1AU",
+                "workplace_type": "hybrid",
+                "pay_info": "£11.44 / hour (Council Co-Funded)",
+                "hours_or_commitment": "16 hours / week",
+                "deadline": utc_now() + timedelta(days=32),
+                "status": "published",
+            },
+            {
+                "business_id": biz_12.id,
+                "title": "Eco-Tourism Experience Host & Trail Guide",
+                "opportunity_type": "part_time_job",
+                "description": "Welcome visitors to Wendover Forest, assist with guided biodiversity walking tours, host visitor center exhibitions, and support outdoor youth education.",
+                "required_skills": ["Communication", "Customer Service"],
+                "preferred_skills": ["First Aid"],
+                "location_name": "Wendover, Buckinghamshire",
+                "postcode": "HP22 6DU",
+                "workplace_type": "in_person",
+                "pay_info": "£11.44 / hour (Subsidy Eligible)",
+                "hours_or_commitment": "10-14 hours / week",
+                "deadline": utc_now() + timedelta(days=36),
+                "status": "published",
+            },
+            {
+                "business_id": biz_13.id,
+                "title": "Junior Mechatronics & CNC Assembly Apprentice",
+                "opportunity_type": "apprenticeship",
+                "description": "Learn precision CNC calibration, industrial wiring loom assembly, and automated pick-and-place robotics programming in Aylesbury's industrial park.",
+                "required_skills": ["Problem Solving", "Teamwork"],
+                "preferred_skills": ["Mathematics"],
+                "location_name": "Gatehouse, Aylesbury, Buckinghamshire",
+                "postcode": "HP19 8DB",
+                "workplace_type": "in_person",
+                "pay_info": "£11.50 / hour (Council Subsidised)",
+                "hours_or_commitment": "16 hours / week",
+                "deadline": utc_now() + timedelta(days=24),
+                "status": "published",
+            },
+            {
+                "business_id": biz_14.id,
+                "title": "Trainee Animal Wellbeing & Care Companion",
+                "opportunity_type": "part_time_job",
+                "description": "Assist clinical veterinary nurses with animal husbandry, dog hydrotherapy rehabilitation sessions, and client welcoming in our Beaconsfield sanctuary.",
+                "required_skills": ["Communication", "Teamwork"],
+                "preferred_skills": ["Customer Service"],
+                "location_name": "Beaconsfield Old Town, Buckinghamshire",
+                "postcode": "HP9 2JH",
+                "workplace_type": "in_person",
+                "pay_info": "£11.44 / hour (Council Co-Funded)",
+                "hours_or_commitment": "12 hours / week",
+                "deadline": utc_now() + timedelta(days=42),
+                "status": "published",
+            },
+        ]
 
-            created_opps = []
-            for data in opportunities_data:
-                lat, lon = geocode_uk_postcode(data["postcode"])
-                loc_geom = create_point_geom(lat, lon, is_postgres=is_postgres)
+        created_opps = []
+        for data in opportunities_data:
+            lat, lon = geocode_uk_postcode(data["postcode"])
+            loc_geom = create_point_geom(lat, lon, is_postgres=is_postgres)
 
+            opp = db.query(Opportunity).filter(
+                Opportunity.business_id == data["business_id"],
+                Opportunity.title == data["title"],
+            ).first()
+
+            if not opp:
                 opp = Opportunity(
                     business_id=data["business_id"],
                     title=data["title"],
@@ -547,13 +960,28 @@ def seed_database(db: Session = None):
                     hourly_wage_subsidised=data.get("hourly_wage_subsidised"),
                 )
                 db.add(opp)
-                created_opps.append(opp)
+            else:
+                opp.description = data["description"]
+                opp.location_name = data["location_name"]
+                opp.postcode = data["postcode"]
+                opp.latitude = lat
+                opp.longitude = lon
+                opp.location_geom = loc_geom
+                opp.pay_info = data["pay_info"]
+                opp.hours_or_commitment = data["hours_or_commitment"]
+                opp.status = data["status"]
+            created_opps.append(opp)
 
-            db.flush()
+        db.flush()
 
-            # 9. Seed Sample Application
-            youth_1_profile = user_youth_1.youth_profile
-            if youth_1_profile and len(created_opps) > 0:
+        # 9. Seed Sample Application
+        youth_1_profile = user_youth_1.youth_profile
+        if youth_1_profile and len(created_opps) > 0:
+            existing_app = db.query(Application).filter(
+                Application.youth_profile_id == youth_1_profile.id,
+                Application.opportunity_id == created_opps[0].id
+            ).first()
+            if not existing_app:
                 sample_app = Application(
                     youth_profile_id=youth_1_profile.id,
                     opportunity_id=created_opps[0].id,

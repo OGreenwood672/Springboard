@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@springboard/shared-types": "workspace:*",
+    "@types/leaflet": "^1.9.22",
     "@xyflow/react": "^12.11.5",
     "clsx": "^2.1.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.359.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

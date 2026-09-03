@@ -8,6 +8,12 @@ export interface User {
   updated_at: string;
 }
 
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
+}
+
 export type OpportunityType =
   "part_time_job" | "work_experience" | "volunteering";
 export type WorkplaceType = "in_person" | "hybrid" | "remote";
@@ -222,6 +228,7 @@ export interface AICoachExtractedProfile {
   education_stage: string;
   qualifications: { name: string; grade: string }[];
   preferred_opportunity_types: OpportunityType[];
+  location?: { postcode?: string; max_travel_km?: number };
 }
 
 export type ConversationRole = "system" | "user" | "assistant" | "tool";
@@ -265,19 +272,26 @@ export interface PendingAction {
 
 export type UICardType =
   | "confirmation"
+  | "confirmation_card"
   | "opportunity_recommendation"
   | "candidate_match"
   | "profile_summary"
   | "opportunity_draft"
   | "subsidy_offer"
-  | "subsidy_impact";
+  | "subsidy_impact"
+  | "scheme_draft"
+  | "company_assessment"
+  | "budget_forecast";
 
 export interface ConfirmationCardData {
-  action_id: string;
+  action_id?: string;
+  pending_action_id?: string;
   action_type: string;
   title: string;
-  summary: string;
-  details: Record<string, any>;
+  summary?: string;
+  description?: string;
+  diff_summary?: Record<string, any>;
+  details?: Record<string, any>;
   status?: PendingActionStatus;
 }
 
@@ -441,6 +455,14 @@ export interface EligibleBusiness {
   open_opportunities_count: number;
   contact_name: string;
   contact_email: string;
+  // Council-only AI intelligence & reviews
+  ai_funding_score?: number; // 0-100 score for council grant allocation
+  ai_funding_tier?: string; // e.g. "Tier 1 — High Impact SROI"
+  ai_research_summary?: string; // AI synthesised business profile and viability
+  ai_role_viability?: string; // AI assessment of youth apprenticeship suitability
+  employee_reviews_summary?: string; // Feedback from past employees/apprentices
+  employee_review_rating?: number; // e.g. 4.8 / 5
+  employee_review_count?: number; // e.g. 14
 }
 
 export interface CouncilMapMarker {
@@ -463,6 +485,14 @@ export interface CouncilMapMarker {
   youth_mentorship_commitment: boolean;
   contact_name: string;
   contact_email: string;
+  // Council-only AI intelligence & reviews
+  ai_funding_score?: number;
+  ai_funding_tier?: string;
+  ai_research_summary?: string;
+  ai_role_viability?: string;
+  employee_reviews_summary?: string;
+  employee_review_rating?: number;
+  employee_review_count?: number;
 }
 
 export interface DeprivationAreaBoundary {

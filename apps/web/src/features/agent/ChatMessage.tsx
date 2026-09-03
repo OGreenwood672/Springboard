@@ -39,13 +39,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     const lines = content.split("\n");
     return lines.map((line, idx) => {
       // Bold replacement
-      let parsed = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      let parsed = line.replace(/\*\*(.*?)\*\*/g, "<strong class='text-white'>$1</strong>");
       // Bullet list items
       if (line.trim().startsWith("•") || line.trim().startsWith("-")) {
         return (
           <p
             key={idx}
-            className="my-1 flex items-start gap-1.5 leading-relaxed pl-1"
+            className="my-1 flex items-start gap-1.5 leading-relaxed pl-1 text-slate-200"
             dangerouslySetInnerHTML={{ __html: parsed }}
           />
         );
@@ -62,30 +62,26 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
   return (
     <div
-      className={`flex gap-3 py-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}
+      className={`flex gap-3 py-2 ${isUser ? "flex-row-reverse" : "flex-row"}`}
     >
       {/* Avatar */}
       <div
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-bold text-xs shadow-2xs ${
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-bold text-xs shadow-md ${
           isUser
-            ? "bg-slate-900 text-white"
-            : "bg-gradient-to-tr from-emerald-600 to-teal-500 text-white"
+            ? "bg-slate-800 text-white border border-slate-700"
+            : "bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-emerald-950/40"
         }`}
       >
-        {isUser ? (
-          <UserIcon className="h-4 w-4" />
-        ) : (
-          <Bot className="h-4 w-4" />
-        )}
+        {isUser ? <UserIcon className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
       </div>
 
       {/* Message Body & Embedded Cards */}
       <div className={`max-w-[85%] sm:max-w-[75%] space-y-2`}>
         <div
-          className={`rounded-2xl px-4 py-3 text-sm shadow-2xs ${
+          className={`rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed ${
             isUser
-              ? "bg-slate-900 text-white rounded-tr-xs"
-              : "bg-white border border-slate-200/80 text-slate-800 rounded-tl-xs"
+              ? "bg-slate-800 text-white rounded-tr-xs border border-slate-700 shadow-md"
+              : "bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-xs shadow-lg"
           }`}
         >
           {formatContent(message.content)}
@@ -97,6 +93,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             {uiCards.map((card) => {
               switch (card.card_type) {
                 case "confirmation_card":
+                case "confirmation":
                   return onConfirmAction && onCancelAction ? (
                     <ConfirmationCard
                       key={card.id}

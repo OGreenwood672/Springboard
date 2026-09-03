@@ -42,7 +42,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
   };
 
   return (
-    <div className="border-t border-slate-200/80 bg-white/95 p-3 sm:p-4 backdrop-blur-md">
+    <div className="border-t border-slate-800 bg-slate-950/90 p-3 sm:p-4 backdrop-blur-md">
       {/* Suggested Prompt Chips */}
       {suggestedPrompts.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-1.5 overflow-x-auto pb-1 scrollbar-none">
@@ -52,9 +52,9 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
               type="button"
               onClick={() => onSend(prompt)}
               disabled={disabled}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900 disabled:opacity-50 transition-all cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-emerald-500 hover:bg-emerald-950/40 hover:text-emerald-300 disabled:opacity-40 transition-all cursor-pointer shadow-sm"
             >
-              <Sparkles className="h-3 w-3 text-amber-500" />
+              <Sparkles className="h-3 w-3 text-amber-400" />
               <span>{prompt}</span>
             </button>
           ))}
@@ -62,7 +62,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
       )}
 
       {/* Input Box */}
-      <div className="relative flex items-end gap-2 rounded-2xl border border-slate-300 bg-slate-50/70 p-1.5 focus-within:border-emerald-600 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
+      <div className="relative flex items-end gap-2 rounded-2xl border border-slate-800 bg-slate-900/90 p-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all shadow-inner">
         <textarea
           ref={textareaRef}
           value={text}
@@ -71,26 +71,26 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
           disabled={disabled}
           placeholder={placeholder}
           rows={1}
-          className="max-h-28 w-full resize-none bg-transparent px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:opacity-50"
+          className="max-h-28 w-full resize-none bg-transparent px-3 py-1.5 text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none disabled:opacity-40"
         />
 
         <button
           type="button"
           onClick={handleSend}
           disabled={!text.trim() || disabled}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs hover:bg-emerald-700 disabled:opacity-40 disabled:hover:bg-emerald-600 transition-all cursor-pointer"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-md hover:from-emerald-400 hover:to-teal-300 disabled:opacity-30 disabled:hover:from-emerald-500 transition-all cursor-pointer"
         >
           <Send className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-400 px-1">
+      <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 px-1 font-mono">
         <span>
-          Springboard AI assistant provides guidance & recommendations.
+          Springboard Agent Orchestrator • Pydantic Validated
         </span>
-        <span>
+        <span className="hidden sm:inline">
           Press{" "}
-          <kbd className="rounded border border-slate-200 bg-slate-100 px-1 font-mono text-[10px]">
+          <kbd className="rounded border border-slate-700 bg-slate-800 px-1 font-mono text-[10px] text-slate-400">
             Enter ↵
           </kbd>
         </span>

@@ -10,12 +10,12 @@ export const SubsidyStatusBadge: React.FC<{
 }> = ({ status }) => {
   const styles: Record<string, string> = {
     active_subsidised:
-      "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold",
-    approved: "bg-teal-100 text-teal-800 border-teal-300",
-    pledged: "bg-sky-100 text-sky-800 border-sky-300 font-semibold",
-    eligible: "bg-amber-100 text-amber-800 border-amber-300 font-semibold",
-    ineligible: "bg-slate-100 text-slate-600 border-slate-300",
-    not_applied: "bg-slate-100 text-slate-600 border-slate-300",
+      "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold",
+    approved: "bg-teal-500/20 text-teal-300 border-teal-500/40 font-bold",
+    pledged: "bg-sky-500/20 text-sky-300 border-sky-500/40 font-bold",
+    eligible: "bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold",
+    ineligible: "bg-slate-800 text-slate-400 border-slate-700 font-medium",
+    not_applied: "bg-slate-800 text-slate-400 border-slate-700 font-medium",
   };
 
   const labels: Record<string, string> = {
@@ -29,8 +29,8 @@ export const SubsidyStatusBadge: React.FC<{
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs border ${
-        styles[status] || "bg-slate-100 text-slate-700 border-slate-200"
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border ${
+        styles[status] || "bg-slate-800 text-slate-300 border-slate-700"
       }`}
     >
       {labels[status] || status}
@@ -42,10 +42,10 @@ export const CompanySizeBadge: React.FC<{ size: CompanySize | string }> = ({
   size,
 }) => {
   const styles: Record<string, string> = {
-    micro: "bg-purple-100 text-purple-800 border-purple-200",
-    small: "bg-blue-100 text-blue-800 border-blue-200",
-    medium: "bg-amber-100 text-amber-800 border-amber-200",
-    large: "bg-slate-100 text-slate-700 border-slate-200",
+    micro: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+    small: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+    medium: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    large: "bg-slate-800 text-slate-400 border-slate-700",
   };
 
   const labels: Record<string, string> = {
@@ -57,8 +57,8 @@ export const CompanySizeBadge: React.FC<{ size: CompanySize | string }> = ({
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
-        styles[size] || "bg-slate-100 text-slate-700"
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold border ${
+        styles[size] || "bg-slate-800 text-slate-300 border-slate-700"
       }`}
     >
       {labels[size] || size}
@@ -70,17 +70,17 @@ export const AllocationStatusBadge: React.FC<{
   status: WageSubsidyAllocationStatus | string;
 }> = ({ status }) => {
   const styles: Record<string, string> = {
-    active: "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold",
-    pledged: "bg-sky-100 text-sky-800 border-sky-300 font-semibold",
-    approved: "bg-teal-100 text-teal-800 border-teal-300",
-    completed: "bg-slate-100 text-slate-800 border-slate-300",
-    cancelled: "bg-rose-100 text-rose-800 border-rose-300",
+    active: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold",
+    pledged: "bg-sky-500/20 text-sky-300 border-sky-500/40 font-bold",
+    approved: "bg-teal-500/20 text-teal-300 border-teal-500/40 font-bold",
+    completed: "bg-slate-800 text-slate-300 border-slate-700 font-bold",
+    cancelled: "bg-rose-500/20 text-rose-300 border-rose-500/40 font-bold",
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs border uppercase tracking-wider font-bold ${
-        styles[status] || "bg-slate-100 text-slate-700"
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border uppercase tracking-wider font-bold ${
+        styles[status] || "bg-slate-800 text-slate-300 border-slate-700"
       }`}
     >
       {status}

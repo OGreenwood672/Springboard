@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Opportunity, Application, Match, ApplicationStatus } from '@springboard/shared-types';
-import { opportunitiesApi } from '../../api/opportunities';
-import { businessesApi } from '../../api/businesses';
-import { applicationsApi } from '../../api/applications';
-import { useToast } from '../../context/ToastContext';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import React, { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import {
+  Opportunity,
+  Application,
+  Match,
+  ApplicationStatus,
+} from "@springboard/shared-types";
+import { opportunitiesApi } from "../../api/opportunities";
+import { businessesApi } from "../../api/businesses";
+import { applicationsApi } from "../../api/applications";
+import { useToast } from "../../context/ToastContext";
+import { LoadingSpinner } from "../../components/common/LoadingSpinner";
 import {
   OpportunityTypeBadge,
   ApplicationStatusBadge,
   WorkplaceBadge,
-} from '../../components/common/Badge';
-import {
-  Users,
-  Sparkles,
-  ArrowLeft,
-  Frown,
-} from 'lucide-react';
+} from "../../components/common/Badge";
+import { Users, Sparkles, ArrowLeft, Frown } from "lucide-react";
 
 export const OpportunityApplicantsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,7 +25,9 @@ export const OpportunityApplicantsPage: React.FC = () => {
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
-  const [activeTab, setActiveTab] = useState<'applications' | 'matches'>('applications');
+  const [activeTab, setActiveTab] = useState<"applications" | "matches">(
+    "applications",
+  );
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -41,7 +43,7 @@ export const OpportunityApplicantsPage: React.FC = () => {
       setApplications(appsData);
       setMatches(matchesData);
     } catch (err: any) {
-      showToast(err.message || 'Failed to load applicant data', 'error');
+      showToast(err.message || "Failed to load applicant data", "error");
     } finally {
       setLoading(false);
     }
@@ -51,29 +53,38 @@ export const OpportunityApplicantsPage: React.FC = () => {
     fetchData();
   }, [id]);
 
-  const handleStatusChange = async (appId: string, newStatus: ApplicationStatus) => {
+  const handleStatusChange = async (
+    appId: string,
+    newStatus: ApplicationStatus,
+  ) => {
     try {
       await applicationsApi.updateStatus(appId, newStatus);
-      showToast(`Application updated to '${newStatus}'`, 'success');
+      showToast(`Application updated to '${newStatus}'`, "success");
       fetchData();
     } catch (err: any) {
-      showToast(err.message || 'Failed to update application status', 'error');
+      showToast(err.message || "Failed to update application status", "error");
     }
   };
 
   if (loading) {
     return (
       <div className="py-24">
-        <LoadingSpinner size="lg" text="Loading applicants & candidate matches..." />
+        <LoadingSpinner
+          size="lg"
+          text="Loading applicants & candidate matches..."
+        />
       </div>
     );
   }
 
   if (!opportunity) {
     return (
-      <div className="max-w-md mx-auto my-16 text-center bg-white p-8 rounded-3xl border border-slate-200">
-        <h2 className="text-xl font-bold text-slate-900">Listing not found</h2>
-        <Link to="/business/opportunities" className="text-xs text-indigo-600 font-semibold mt-2 inline-block">
+      <div className="max-w-md mx-auto my-16 text-center bg-slate-900 p-8 rounded-3xl border border-slate-800 text-slate-100">
+        <h2 className="text-xl font-bold text-white">Listing not found</h2>
+        <Link
+          to="/business/opportunities"
+          className="text-xs text-indigo-400 font-semibold mt-2 inline-block hover:underline"
+        >
           Return to listings
         </Link>
       </div>
@@ -81,43 +92,45 @@ export const OpportunityApplicantsPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 text-slate-100">
       <Link
         to="/business/opportunities"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-700 transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         <span>Back to listings</span>
       </Link>
 
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
+      <div className="bg-slate-900/90 rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <OpportunityTypeBadge type={opportunity.opportunity_type} />
             <WorkplaceBadge type={opportunity.workplace_type} />
           </div>
-          <span className="text-xs text-slate-500 font-medium">
-            Postcode: <b>{opportunity.postcode || 'N/A'}</b>
+          <span className="text-xs text-slate-400 font-mono">
+            Postcode:{" "}
+            <b className="text-white">{opportunity.postcode || "N/A"}</b>
           </span>
         </div>
 
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             {opportunity.title}
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Review submitted youth candidate applications and discover algorithmically matched candidate talent.
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            Review submitted youth candidate applications and discover
+            algorithmically matched candidate talent.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+        <div className="flex items-center gap-2 pt-4 border-t border-slate-800">
           <button
             type="button"
-            onClick={() => setActiveTab('applications')}
+            onClick={() => setActiveTab("applications")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'applications'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              activeTab === "applications"
+                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md shadow-indigo-950/40 font-black"
+                : "bg-slate-950 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-850"
             }`}
           >
             <Users className="w-4 h-4" />
@@ -126,11 +139,11 @@ export const OpportunityApplicantsPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setActiveTab('matches')}
+            onClick={() => setActiveTab("matches")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'matches'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              activeTab === "matches"
+                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md shadow-indigo-950/40 font-black"
+                : "bg-slate-950 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-850"
             }`}
           >
             <Sparkles className="w-4 h-4 text-amber-400" />
@@ -139,97 +152,149 @@ export const OpportunityApplicantsPage: React.FC = () => {
         </div>
       </div>
 
-      {activeTab === 'applications' && (
+      {activeTab === "applications" && (
         <div className="space-y-4">
           {applications.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-2xs space-y-4 max-w-md mx-auto my-8">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+            <div className="bg-slate-900/90 rounded-3xl p-12 text-center border border-slate-800 shadow-xl space-y-4 max-w-md mx-auto my-8">
+              <div className="w-12 h-12 rounded-2xl bg-slate-850 text-slate-500 flex items-center justify-center mx-auto border border-slate-800">
                 <Frown className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900">No applications received yet</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                When youth candidates apply to this listing, their applications, cover notes, and qualifications will appear here.
+              <h3 className="text-lg font-black text-white">
+                No applications received yet
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                When youth candidates apply to this listing, their applications,
+                cover notes, and qualifications will appear here.
               </p>
             </div>
           ) : (
             applications.map((app) => {
               const youth = app.youth_profile;
-              const appliedDate = new Date(app.created_at).toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              });
+              const appliedDate = new Date(app.created_at).toLocaleDateString(
+                "en-GB",
+                {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                },
+              );
 
               return (
                 <div
                   key={app.id}
-                  className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-2xs space-y-4"
+                  className="bg-slate-900/90 rounded-3xl p-6 sm:p-7 border border-slate-800 shadow-xl space-y-4"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-bold text-slate-900">
-                          {youth?.full_name || 'Youth Candidate'}
+                        <h3 className="text-lg font-black text-white">
+                          {youth?.full_name || "Youth Candidate"}
                         </h3>
                         <ApplicationStatusBadge status={app.status} />
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Applied on {appliedDate} • Location: {youth?.postcode || youth?.preferred_location || 'UK'}
+                      <p className="text-xs text-slate-400 mt-1 font-mono">
+                        Applied on {appliedDate} • Location:{" "}
+                        {youth?.postcode ||
+                          youth?.preferred_location ||
+                          "Buckinghamshire"}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-600">Update Status:</span>
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                        Update Status:
+                      </span>
                       <select
                         value={app.status}
-                        onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
-                        className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white uk-focus-ring cursor-pointer"
+                        onChange={(e) =>
+                          handleStatusChange(
+                            app.id,
+                            e.target.value as ApplicationStatus,
+                          )
+                        }
+                        className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-white focus:bg-slate-900 focus:border-indigo-500 uk-focus-ring cursor-pointer"
                       >
-                        <option value="submitted">Submitted</option>
-                        <option value="reviewed">Reviewed</option>
-                        <option value="shortlisted">Shortlisted</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Not Selected</option>
+                        <option
+                          value="submitted"
+                          className="bg-slate-900 text-white"
+                        >
+                          Submitted
+                        </option>
+                        <option
+                          value="reviewed"
+                          className="bg-slate-900 text-white"
+                        >
+                          Reviewed
+                        </option>
+                        <option
+                          value="shortlisted"
+                          className="bg-slate-900 text-white"
+                        >
+                          Shortlisted
+                        </option>
+                        <option
+                          value="accepted"
+                          className="bg-slate-900 text-white"
+                        >
+                          Accepted
+                        </option>
+                        <option
+                          value="rejected"
+                          className="bg-slate-900 text-white"
+                        >
+                          Not Selected
+                        </option>
                       </select>
                     </div>
                   </div>
 
                   {app.cover_note && (
-                    <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-700 space-y-1">
-                      <span className="font-bold text-slate-900 block">Candidate Note:</span>
-                      <p className="leading-relaxed italic">"{app.cover_note}"</p>
+                    <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-1">
+                      <span className="font-bold text-white block">
+                        Candidate Note:
+                      </span>
+                      <p className="leading-relaxed italic text-slate-300">
+                        "{app.cover_note}"
+                      </p>
                     </div>
                   )}
 
                   {youth && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs pt-2 border-t border-slate-100">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs pt-4 border-t border-slate-800">
                       <div>
-                        <span className="text-slate-400 font-semibold uppercase tracking-wider block mb-1">
+                        <span className="text-slate-400 font-mono text-[10px] font-bold uppercase tracking-wider block mb-1">
                           Education & Qualifications
                         </span>
-                        <p className="text-slate-800 font-medium capitalize">
-                          Stage: {youth.education_stage?.replace('_', ' ') || 'Student'}
+                        <p className="text-white font-medium capitalize">
+                          Stage:{" "}
+                          {youth.education_stage?.replace("_", " ") ||
+                            "Student"}
                         </p>
-                        {youth.qualifications && youth.qualifications.length > 0 && (
-                          <div className="mt-1 space-y-0.5">
-                            {youth.qualifications.map((q, i) => (
-                              <p key={i} className="text-slate-600 text-[11px]">
-                                • {q.name} ({q.grade ? `Grade ${q.grade}` : 'Passed'})
-                              </p>
-                            ))}
-                          </div>
-                        )}
+                        {youth.qualifications &&
+                          youth.qualifications.length > 0 && (
+                            <div className="mt-1 space-y-0.5">
+                              {youth.qualifications.map((q, i) => (
+                                <p
+                                  key={i}
+                                  className="text-slate-400 text-[11px] font-mono"
+                                >
+                                  • {q.name} (
+                                  {q.grade ? `Grade ${q.grade}` : "Passed"})
+                                </p>
+                              ))}
+                            </div>
+                          )}
                       </div>
 
                       <div>
-                        <span className="text-slate-400 font-semibold uppercase tracking-wider block mb-1">
+                        <span className="text-slate-400 font-mono text-[10px] font-bold uppercase tracking-wider block mb-1">
                           Candidate Skills
                         </span>
                         <div className="flex flex-wrap gap-1">
                           {youth.skills?.map((s, i) => (
                             <span
                               key={i}
-                              className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 text-[11px] font-medium"
+                              className="px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[11px] font-mono font-bold"
                             >
                               {s}
                             </span>
@@ -238,14 +303,18 @@ export const OpportunityApplicantsPage: React.FC = () => {
                       </div>
 
                       <div>
-                        <span className="text-slate-400 font-semibold uppercase tracking-wider block mb-1">
+                        <span className="text-slate-400 font-mono text-[10px] font-bold uppercase tracking-wider block mb-1">
                           Availability & Travel
                         </span>
-                        <p className="text-slate-800 font-medium">
-                          Available: {youth.availability?.days?.join(', ') || 'Flexible'}
+                        <p className="text-white font-medium">
+                          Available:{" "}
+                          {youth.availability?.days?.join(", ") || "Flexible"}
                         </p>
-                        <p className="text-slate-500 text-[11px] mt-0.5">
-                          Max travel limit: {youth.max_travel_km} km
+                        <p className="text-slate-400 text-[11px] font-mono mt-0.5">
+                          Max travel limit:{" "}
+                          <span className="text-emerald-400 font-bold">
+                            {youth.max_travel_km} km
+                          </span>
                         </p>
                       </div>
                     </div>
@@ -257,16 +326,19 @@ export const OpportunityApplicantsPage: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'matches' && (
+      {activeTab === "matches" && (
         <div className="space-y-4">
           {matches.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-2xs space-y-4 max-w-md mx-auto my-8">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+            <div className="bg-slate-900/90 rounded-3xl p-12 text-center border border-slate-800 shadow-xl space-y-4 max-w-md mx-auto my-8">
+              <div className="w-12 h-12 rounded-2xl bg-slate-850 text-slate-500 flex items-center justify-center mx-auto border border-slate-800">
                 <Frown className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900">No matches generated yet</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                As young people register and complete their profiles, our algorithm will automatically rank compatible candidate matches.
+              <h3 className="text-lg font-black text-white">
+                No matches generated yet
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                As young people register and complete their profiles, our
+                algorithm will automatically rank compatible candidate matches.
               </p>
             </div>
           ) : (
@@ -277,33 +349,44 @@ export const OpportunityApplicantsPage: React.FC = () => {
               return (
                 <div
                   key={match.id}
-                  className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+                  className="bg-slate-900/90 rounded-3xl p-6 sm:p-7 border border-slate-800 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-6"
                 >
                   <div className="space-y-2.5 flex-1">
                     <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-bold text-slate-900">
-                        {youth?.full_name || 'Youth Candidate'}
+                      <h3 className="text-lg font-black text-white">
+                        {youth?.full_name || "Youth Candidate"}
                       </h3>
-                      <span className="text-xs text-slate-500 font-medium">
-                        {youth?.postcode || 'UK'} • {youth?.education_stage?.replace('_', ' ') || 'Student'}
+                      <span className="text-xs text-slate-400 font-mono">
+                        {youth?.postcode || "UK"} •{" "}
+                        {youth?.education_stage?.replace("_", " ") || "Student"}
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
-                        Skills Match: <b>{factors.skills_score || 0}/35</b>
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300">
+                        Skills Match:{" "}
+                        <b className="text-indigo-400">
+                          {factors.skills_score || 0}/35
+                        </b>
                       </span>
-                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
-                        Location: <b>{factors.location_score || 0}/25</b>
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300">
+                        Location:{" "}
+                        <b className="text-indigo-400">
+                          {factors.location_score || 0}/25
+                        </b>
                       </span>
-                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
-                        Schedule: <b>{factors.availability_score || 0}/10</b>
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300">
+                        Schedule:{" "}
+                        <b className="text-indigo-400">
+                          {factors.availability_score || 0}/10
+                        </b>
                       </span>
-                      {factors.distance_km !== null && factors.distance_km !== undefined && (
-                        <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-semibold">
-                          📍 {factors.distance_km} km distance
-                        </span>
-                      )}
+                      {factors.distance_km !== null &&
+                        factors.distance_km !== undefined && (
+                          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">
+                            📍 {factors.distance_km} km distance
+                          </span>
+                        )}
                     </div>
 
                     {youth?.skills && (
@@ -311,7 +394,7 @@ export const OpportunityApplicantsPage: React.FC = () => {
                         {youth.skills.map((s, i) => (
                           <span
                             key={i}
-                            className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium"
+                            className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-slate-300 text-[11px] font-mono"
                           >
                             {s}
                           </span>
@@ -320,9 +403,11 @@ export const OpportunityApplicantsPage: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-900 min-w-[110px] shrink-0">
-                    <span className="text-2xl font-black">{Math.round(match.score)}%</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700">
+                  <div className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 min-w-[110px] shrink-0 font-mono">
+                    <span className="text-2xl font-black text-white">
+                      {Math.round(match.score)}%
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
                       Match Score
                     </span>
                   </div>

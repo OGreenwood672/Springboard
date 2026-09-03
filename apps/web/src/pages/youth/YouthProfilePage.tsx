@@ -170,19 +170,19 @@ export const YouthProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-sm space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-slate-100">
+      <div className="bg-slate-900/90 rounded-3xl p-6 sm:p-10 border border-slate-800 shadow-2xl space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                 Youth Profile
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                 {user?.email}
               </span>
             </div>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
               Keep your profile up to date for higher matching scores and
               employer shortlisting.
             </p>
@@ -191,9 +191,9 @@ export const YouthProfilePage: React.FC = () => {
           <button
             type="button"
             onClick={() => setAiCoachOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 hover:from-emerald-400 hover:to-teal-300 shadow-md shadow-emerald-950/40 transition-all cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+            <Sparkles className="w-4 h-4 text-slate-950" />
             <span>AI Coach Assist</span>
           </button>
         </div>
@@ -201,13 +201,13 @@ export const YouthProfilePage: React.FC = () => {
         <form onSubmit={handleSave} className="space-y-8">
           {/* Basic Info */}
           <div className="space-y-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <User className="w-4 h-4 text-emerald-600" />
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <User className="w-4 h-4 text-emerald-400" />
               Personal Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                   Full Name
                 </label>
                 <input
@@ -215,71 +215,82 @@ export const YouthProfilePage: React.FC = () => {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:bg-slate-900 focus:border-emerald-500 uk-focus-ring"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                   Education Stage
                 </label>
                 <select
                   value={educationStage}
                   onChange={(e) => setEducationStage(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:bg-slate-900 focus:border-emerald-500 uk-focus-ring cursor-pointer"
                 >
-                  <option value="secondary">
+                  <option value="secondary" className="bg-slate-900 text-white">
                     Secondary School (Years 10–11 / GCSE)
                   </option>
-                  <option value="sixth_form">
+                  <option
+                    value="sixth_form"
+                    className="bg-slate-900 text-white"
+                  >
                     Sixth Form (Years 12–13 / A-Levels / T-Levels)
                   </option>
-                  <option value="college">
+                  <option value="college" className="bg-slate-900 text-white">
                     Further Education College / BTEC
                   </option>
-                  <option value="university">
+                  <option
+                    value="university"
+                    className="bg-slate-900 text-white"
+                  >
                     University / Higher Education
                   </option>
-                  <option value="other">Other / Gap Year</option>
+                  <option value="other" className="bg-slate-900 text-white">
+                    Other / Gap Year
+                  </option>
                 </select>
               </div>
             </div>
           </div>
 
           {/* Location */}
-          <div className="space-y-4 pt-4 border-t border-slate-100">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-emerald-600" />
+          <div className="space-y-4 pt-6 border-t border-slate-800">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-emerald-400" />
               Location & Travel Limit
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                   Area / City
                 </label>
                 <input
                   type="text"
                   value={preferredLocation}
                   onChange={(e) => setPreferredLocation(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:bg-slate-900 focus:border-emerald-500 uk-focus-ring"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                   UK Postcode
                 </label>
                 <input
                   type="text"
                   value={postcode}
                   onChange={(e) => setPostcode(e.target.value.toUpperCase())}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring uppercase font-mono"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:bg-slate-900 focus:border-emerald-500 uk-focus-ring uppercase font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-                  Max Travel: {maxTravelKm} km
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Max Travel:{" "}
+                  <span className="text-emerald-400 font-bold">
+                    {maxTravelKm} km
+                  </span>
                 </label>
                 <input
                   type="range"
@@ -288,16 +299,16 @@ export const YouthProfilePage: React.FC = () => {
                   step="1"
                   value={maxTravelKm}
                   onChange={(e) => setMaxTravelKm(Number(e.target.value))}
-                  className="w-full accent-emerald-600 mt-2"
+                  className="w-full accent-emerald-500 mt-2"
                 />
               </div>
             </div>
           </div>
 
           {/* Preferred Types */}
-          <div className="space-y-4 pt-4 border-t border-slate-100">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Briefcase className="w-4 h-4 text-emerald-600" />
+          <div className="space-y-4 pt-6 border-t border-slate-800">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-emerald-400" />
               Preferred Opportunity Types
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -322,14 +333,14 @@ export const YouthProfilePage: React.FC = () => {
                   key={item.id}
                   type="button"
                   onClick={() => toggleOppType(item.id)}
-                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                     preferredTypes.includes(item.id)
-                      ? "bg-emerald-50 border-emerald-400 text-emerald-900 font-semibold shadow-2xs"
-                      : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                      ? "bg-emerald-500/15 border-emerald-500/50 text-white font-bold shadow-md ring-1 ring-emerald-500/30"
+                      : "bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-900"
                   }`}
                 >
-                  <p className="text-sm">{item.label}</p>
-                  <p className="text-xs text-slate-500 font-normal mt-0.5">
+                  <p className="text-sm font-bold text-white">{item.label}</p>
+                  <p className="text-xs text-slate-400 font-normal mt-1">
                     {item.desc}
                   </p>
                 </button>
@@ -338,9 +349,9 @@ export const YouthProfilePage: React.FC = () => {
           </div>
 
           {/* Skills & Interests */}
-          <div className="space-y-4 pt-4 border-t border-slate-100">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-600" />
+          <div className="space-y-4 pt-6 border-t border-slate-800">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
               Skills & Interests
             </h3>
             <ProfileTagSelector
@@ -364,9 +375,9 @@ export const YouthProfilePage: React.FC = () => {
           </div>
 
           {/* Availability */}
-          <div className="space-y-4 pt-4 border-t border-slate-100">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-emerald-600" />
+          <div className="space-y-4 pt-6 border-t border-slate-800">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-emerald-400" />
               Availability
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -375,10 +386,10 @@ export const YouthProfilePage: React.FC = () => {
                   key={day}
                   type="button"
                   onClick={() => toggleDay(day)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer ${
                     selectedDays.includes(day)
-                      ? "bg-emerald-600 text-white shadow-2xs"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-950/40"
+                      : "bg-slate-950 border border-slate-800 text-slate-300 hover:bg-slate-850 hover:text-white"
                   }`}
                 >
                   {day}
@@ -386,8 +397,11 @@ export const YouthProfilePage: React.FC = () => {
               ))}
             </div>
             <div className="max-w-xs">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-                Hours per week: {hoursPerWeek}
+              <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Hours per week:{" "}
+                <span className="text-emerald-400 font-bold">
+                  {hoursPerWeek}
+                </span>
               </label>
               <input
                 type="number"
@@ -395,26 +409,26 @@ export const YouthProfilePage: React.FC = () => {
                 max="40"
                 value={hoursPerWeek}
                 onChange={(e) => setHoursPerWeek(Number(e.target.value))}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:bg-slate-900 focus:border-emerald-500 uk-focus-ring"
               />
             </div>
           </div>
 
           {/* Qualifications */}
-          <div className="space-y-4 pt-4 border-t border-slate-100">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <GraduationCap className="w-4 h-4 text-emerald-600" />
+          <div className="space-y-4 pt-6 border-t border-slate-800">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-emerald-400" />
               Qualifications
             </h3>
             {qualifications.map((q, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs"
               >
                 <div>
-                  <span className="font-bold text-slate-900">{q.name}</span>
+                  <span className="font-bold text-white">{q.name}</span>
                   {q.grade && (
-                    <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-semibold">
+                    <span className="ml-2 px-2 py-0.5 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded font-mono font-bold">
                       Grade {q.grade}
                     </span>
                   )}
@@ -422,7 +436,7 @@ export const YouthProfilePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => removeQualification(idx)}
-                  className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
+                  className="text-slate-400 hover:text-rose-400 p-1 transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -435,19 +449,19 @@ export const YouthProfilePage: React.FC = () => {
                 value={newQualName}
                 onChange={(e) => setNewQualName(e.target.value)}
                 placeholder="e.g. A-Level Maths, BTEC IT"
-                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:bg-white uk-focus-ring"
+                className="flex-1 px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 focus:bg-slate-900 focus:border-emerald-500 uk-focus-ring"
               />
               <input
                 type="text"
                 value={newQualGrade}
                 onChange={(e) => setNewQualGrade(e.target.value)}
                 placeholder="Grade"
-                className="w-28 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:bg-white uk-focus-ring"
+                className="w-28 px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 focus:bg-slate-900 focus:border-emerald-500 uk-focus-ring uppercase font-mono"
               />
               <button
                 type="button"
                 onClick={addQualification}
-                className="px-3.5 py-2 bg-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-slate-900 flex items-center gap-1 cursor-pointer"
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-slate-700"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add</span>
@@ -456,23 +470,23 @@ export const YouthProfilePage: React.FC = () => {
           </div>
 
           {/* Bio */}
-          <div className="space-y-4 pt-4 border-t border-slate-100">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+          <div className="space-y-4 pt-6 border-t border-slate-800">
+            <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
               Short Bio
             </label>
             <textarea
               rows={3}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white uk-focus-ring"
+              className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:bg-slate-900 focus:border-emerald-500 uk-focus-ring resize-none"
             />
           </div>
 
-          <div className="pt-6 border-t border-slate-100 flex items-center justify-end">
+          <div className="pt-6 border-t border-slate-800 flex items-center justify-end">
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-xs font-black bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 hover:from-emerald-400 hover:to-teal-300 shadow-lg shadow-emerald-950/50 disabled:opacity-50 transition-all cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>

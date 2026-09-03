@@ -26,7 +26,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
         <LoadingSpinner size="lg" text="Authenticating council session..." />
       </div>
     );
@@ -41,7 +41,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 
 export const AppContent: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
       <Navbar />
       <main className="flex-1">
         <Routes>

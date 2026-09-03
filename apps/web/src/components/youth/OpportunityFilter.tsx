@@ -24,18 +24,18 @@ export const OpportunityFilter: React.FC<OpportunityFilterProps> = ({
     !!filters.opportunity_type || !!filters.workplace_type || !!filters.location || !!filters.keyword;
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-4">
+    <div className="bg-slate-900/90 rounded-3xl p-5 sm:p-6 border border-slate-800 shadow-xl space-y-4 text-slate-100">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-          <Filter className="w-3.5 h-3.5 text-emerald-600" />
-          Filter Opportunities
+        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+          <Filter className="w-3.5 h-3.5 text-emerald-400" />
+          Filter Vacancies
         </span>
 
         {hasActiveFilters && (
           <button
             type="button"
             onClick={onReset}
-            className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors"
+            className="text-xs font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Clear All
@@ -46,7 +46,7 @@ export const OpportunityFilter: React.FC<OpportunityFilterProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Search Keyword */}
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
             <Search className="w-4 h-4" />
           </div>
           <input
@@ -54,13 +54,13 @@ export const OpportunityFilter: React.FC<OpportunityFilterProps> = ({
             value={filters.keyword || ''}
             onChange={(e) => handleChange('keyword', e.target.value)}
             placeholder="Role, skill, or keyword..."
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white uk-focus-ring"
+            className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
           />
         </div>
 
         {/* Location / Postcode */}
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
             <MapPin className="w-4 h-4" />
           </div>
           <input
@@ -68,7 +68,7 @@ export const OpportunityFilter: React.FC<OpportunityFilterProps> = ({
             value={filters.location || ''}
             onChange={(e) => handleChange('location', e.target.value)}
             placeholder="UK Postcode or City..."
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white uk-focus-ring"
+            className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
           />
         </div>
 
@@ -77,7 +77,7 @@ export const OpportunityFilter: React.FC<OpportunityFilterProps> = ({
           <select
             value={filters.opportunity_type || ''}
             onChange={(e) => handleChange('opportunity_type', e.target.value)}
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-900 focus:bg-white uk-focus-ring"
+            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:border-emerald-500 focus:outline-none"
           >
             <option value="">All Opportunity Types</option>
             <option value="part_time_job">Part-time Job</option>
@@ -91,7 +91,7 @@ export const OpportunityFilter: React.FC<OpportunityFilterProps> = ({
           <select
             value={filters.workplace_type || ''}
             onChange={(e) => handleChange('workplace_type', e.target.value)}
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-900 focus:bg-white uk-focus-ring"
+            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:border-emerald-500 focus:outline-none"
           >
             <option value="">All Workplace Types</option>
             <option value="in_person">In-person</option>

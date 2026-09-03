@@ -1,15 +1,15 @@
-# Springboard UK MVP — Local Setup & Development Guide
+# Springboard UK — Local Setup & Developer Guide
 
-Springboard is a conversation-first web platform designed to help young people (aged 14–24) in the UK discover part-time jobs, work experience placements, and volunteering opportunities, while empowering local businesses to post listings, search candidates, and review applicants.
+Springboard is a conversation-first web platform and geospatial wage subsidy engine connecting young people (aged 14–24), local businesses, and UK Local Authorities to unlock Real Living Wage employment.
 
 ---
 
 ## 1. System Prerequisites
 
-- **Node.js**: v18+ (tested on Node v24.x)
-- **pnpm**: v9+ (or via `npx pnpm`)
+- **Node.js**: v18+ (tested on Node v20.x, v22.x, v24.x)
+- **pnpm**: v9+ (or invoke via `npx pnpm`)
 - **Python**: 3.12+ (tested on Python 3.13)
-- **Docker & Docker Compose**: (for PostgreSQL 16 + PostGIS 3.4)
+- **Docker & Docker Compose**: (Optional; for PostgreSQL 16 + PostGIS 3.4. If Docker is omitted, Springboard automatically runs on its zero-config SQLite standalone database).
 
 ---
 
@@ -18,19 +18,25 @@ Springboard is a conversation-first web platform designed to help young people (
 ```
 springboard/
 ├── apps/
-│   └── web/                     # React 18, TypeScript, Vite, Tailwind CSS SPA
-│       ├── src/features/agent/  # AgentChat, ChatComposer, ConfirmationCard, UI Cards
-│       └── src/pages/           # YouthCoachPage, BusinessAssistantPage, Form Fallbacks
+│   ├── web/                     # React 18 SPA (Port 5173) for Youth Candidates & Businesses
+│   │   ├── src/features/agent/  # Job Coach AI, Recruiter AI, ConfirmationCard, UI Cards
+│   │   ├── src/features/knowledge/ # Interactive Skills Knowledge Graph (@xyflow/react)
+│   │   └── src/pages/           # YouthCoachPage, BusinessAssistantPage, Opportunities
+│   └── council/                 # React 18 SPA (Port 5174) for Local Authority Councils
+│       ├── src/features/agent/  # Council AI Policy Director Chat & Decision Cards
+│       ├── src/features/map/    # Leaflet & CartoDB Geospatial Map with IMD Catchment Layers
+│       └── src/pages/           # CouncilDashboardPage (Command Center), Schemes, Allocations
 ├── packages/
-│   └── shared-types/            # Shared TypeScript domain models, DTOs & Agent types
+│   └── shared-types/            # Shared TypeScript domain contracts, DTOs & agent schemas
 ├── services/
-│   └── api/                     # Python FastAPI, SQLAlchemy 2, Alembic, PostGIS
-│       ├── app/agents/          # YouthAgent, BusinessAgent, ToolExecutor, Gemini API
-│       ├── app/routers/         # Conversations, Opportunities, Profiles, Auth
-│       └── app/services/        # Deterministic Matching Engine, Geocoding
+│   └── api/                     # Python 3.12+ FastAPI backend (Port 8000)
+│       ├── app/agents/          # YouthAgent, BusinessAgent, CouncilAgent, ToolExecutor
+│       ├── app/routers/         # Auth, Profiles, Businesses, Opportunities, Councils, Matches
+│       ├── app/services/        # Deterministic Matching, Skills Graph, Wage Subsidy Ledger
+│       └── tests/               # Pytest test suite (37 unit & integration tests)
 ├── infra/
 │   └── docker-compose.yml       # PostgreSQL 16 + PostGIS 3.4 container
-└── docs/                        # Setup, architecture, and decision records
+└── docs/                        # Technical architecture, commercial guide, decision records
 ```
 
 ---
@@ -42,7 +48,7 @@ springboard/
 From the repository root:
 
 ```bash
-# Install all monorepo workspace dependencies
+# Install monorepo workspace dependencies
 npx pnpm install
 
 # Build shared types package
@@ -56,9 +62,9 @@ cd services/api
 
 # Create and activate virtual environment
 python -m venv .venv
-# On Windows:
+# On Windows PowerShell:
 .\.venv\Scripts\Activate.ps1
-# On macOS/Linux:
+# On macOS / Linux:
 source .venv/bin/activate
 
 # Install Python requirements
@@ -69,7 +75,7 @@ pip install -r requirements.txt
 
 ## 4. Environment Variables & LLM Configuration
 
-The API uses `services/api/.env` (see `services/api/.env.example`):
+The API reads from `services/api/.env` (see `services/api/.env.example`):
 
 ```ini
 PROJECT_NAME="Springboard UK API"
@@ -77,9 +83,10 @@ ENVIRONMENT="development"
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/springboard_db"
 JWT_SECRET_KEY="springboard-super-secret-uk-mvp-key-change-in-prod"
 JWT_ALGORITHM="HS256"
+CORS_ORIGINS=["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"]
 
-# Optional: Google Gemini API Key for LLM Tool Calling
-# If left blank, the platform automatically runs in deterministic offline mock agent mode!
+# Optional: Google Gemini API Key for Live Function Calling
+# If left blank, the platform automatically runs in deterministic offline rule agent mode!
 GEMINI_API_KEY=""
 GEMINI_MODEL="gemini-3.6-flash"
 GEMINI_EMBEDDING_MODEL="gemini-embedding-001"
@@ -88,7 +95,7 @@ SEMANTIC_SKILLS_ENABLED=true
 
 ---
 
-## 5. Running the Database & Migrations
+## 5. Running the Database
 
 ### Option A: Running with Docker (PostgreSQL + PostGIS)
 
@@ -96,135 +103,111 @@ SEMANTIC_SKILLS_ENABLED=true
 # Start PostGIS container
 docker-compose -f infra/docker-compose.yml up -d
 
-# Run Alembic migrations
+# Run database migrations
 cd services/api
 alembic upgrade head
 
-# Seed initial UK data
+# Seed demo UK data
 python -m app.seed
 ```
 
-### Option B: Zero-Config Standalone SQLite Fallback
+### Option B: Zero-Config Standalone SQLite Fallback (Default)
 
-If PostgreSQL is not running, the application automatically activates a local standalone SQLite database (`springboard.db`), creates all tables including conversations and pending actions, and seeds demo UK data on startup.
+If PostgreSQL is not detected, Springboard automatically falls back to a local standalone SQLite database (`springboard.db`), creates all tables, and auto-seeds all demo accounts, businesses, council schemes, and opportunities.
+
+To explicitly migrate and seed the SQLite database:
+```bash
+cd services/api
+python -m app.migrate_sqlite
+```
 
 ---
 
 ## 6. Starting the Development Servers
 
-### Start the FastAPI Backend:
+You will run three development servers:
+
+### 1. Start the FastAPI Backend (Port 8000):
 
 ```bash
 cd services/api
 .\.venv\Scripts\uvicorn app.main:app --reload --port 8000
 ```
+- Interactive Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Health Check: [http://localhost:8000/health](http://localhost:8000/health)
 
-- API Docs (Swagger UI): `http://localhost:8000/docs`
-- Health Check: `http://localhost:8000/health`
-
-### Start the React Frontend:
+### 2. Start the Youth & Business Web Portal (Port 5173):
 
 ```bash
 # In another terminal from repository root
 npx pnpm --filter @springboard/web dev
 ```
+- URL: [http://localhost:5173](http://localhost:5173)
 
-- Web Application: `http://localhost:5173`
+### 3. Start the Council Wage Subsidy Portal (Port 5174):
+
+```bash
+# In another terminal from repository root
+npx pnpm --filter @springboard/council dev
+```
+- URL: [http://localhost:5174](http://localhost:5174)
 
 ---
 
-## 7. Pre-Configured Demo Credentials & Chat Flows
+## 7. Pre-Configured Demo Credentials & Personas
 
-| Role | Email | Password | Primary Experience |
+| Stakeholder Role | Email | Password | Primary Experience |
 | :--- | :--- | :--- | :--- |
-| **Youth Candidate** | `youth@example.com` | `Password123!` | **Job Coach AI** (`/coach`) |
-| **Business / Org** | `business@example.com` | `Password123!` | **Recruiter Assistant AI** (`/business/assistant`) |
+| **Youth Candidate** | `youth@example.com` | `Password123!` | **Job Coach AI** (`/coach`) & **Knowledge Graph** (`/knowledge`) |
+| **Local Business (SME)** | `business@example.com` | `Password123!` | **Recruiter Assistant AI** (`/business/assistant`) |
+| **Buckinghamshire Council** | `council@example.com` | `Password123!` | **Council Command Center** (`http://localhost:5174`) |
+| **London Borough of Camden** | `camden@example.com` | `Password123!` | **Urban IMD Command Center** (`http://localhost:5174`) |
 
-### Example Youth Job Coach Chat Prompts:
-1. *"I'm 17 in sixth form in Chesham (HP5). I know Python, Customer Service, and can work weekends."* (Agent extracts attributes and outputs a profile confirmation card)
-2. *"Show paid part-time roles"* (Agent searches and presents opportunity cards with match score breakdown)
-3. *"Why is the Café Assistant recommended?"* (Agent explains deterministic type, skills, and proximity factors)
-4. *"Apply for the Junior Web Developer role"* (Agent drafts an application and asks for confirmation)
+### Quick Interactive Prompts to Try:
 
-### Example Business Recruiter Chat Prompts:
-1. *"We need two students to help at our café in Amersham on Saturday mornings, paying £11.50 per hour."* (Agent drafts vacancy and presents preview card)
-2. *"Show candidate matches for our weekend role"* (Agent searches anonymized candidate matches with match scores)
-3. *"Explain candidate match factors"* (Agent breaks down candidate score factors)
+#### For Youth Candidates:
+- *"I'm 17 living in Chesham (HP5). I know Python, Customer Service, and can work Saturdays."*
+- *"Show paid part-time opportunities."*
+- *"Why was Chesham Community Bike Works recommended to me?"*
+
+#### For Local Businesses:
+- *"We need two students to help at our café in Amersham on Saturday mornings, paying £11.50 per hour."*
+- *"Show candidate matches for our weekend role."*
+
+#### For Council Officers:
+- *"Assess Chesham Community Bike Works wage subsidy proposal."*
+- *"Model 10 youth placements at £4.50 per hour for 16 hrs a week for 24 weeks."*
+- *"Show high deprivation wards and SME density in Buckinghamshire."*
+- *"Pledge wage subsidy of £4.50/hr to Apex Tech Innovations for 16 hours a week."*
 
 ---
 
-## 8. Running Automated Tests
+## 8. Running Automated Tests & Builds
 
-### Backend Test Suite (Pytest — 24 Tests)
-
+### Backend Pytest Suite (37 Unit & Integration Tests)
 ```bash
 cd services/api
 .\.venv\Scripts\pytest.exe -v
 ```
+*Expected Output: `37 passed in ~4.5s (100%)`*
 
-### Frontend Test Suite (Vitest — 6 Tests)
-
+### Web Portal Tests (11 Vitest Tests)
 ```bash
 npx pnpm --filter @springboard/web test
 ```
+*Expected Output: `4 test files passed, 11 tests passed`*
 
-### Frontend Production Build
-
+### Council Portal Tests (Vitest)
 ```bash
+npx pnpm --filter @springboard/council test
+```
+*Expected Output: `1 test file passed, 1 test passed`*
+
+### Production Builds
+```bash
+# Build web portal
 npx pnpm --filter @springboard/web build
+
+# Build council portal
+npx pnpm --filter @springboard/council build
 ```
-
----
-
-## 9. Connecting Google Gemini API (Instructions)
-
-Springboard features a **dual-mode agent architecture**:
-- **Offline / Standalone Mode (Default)**: When `GEMINI_API_KEY` is not provided (or empty), the platform runs a local rule-based intent router that invokes the exact same typed tools, creates identical pending action cards, and functions 100% offline with zero external network requests.
-- **Live Gemini Agent Mode**: When `GEMINI_API_KEY` is configured, Springboard connects to Google Gemini via the official `google-genai` SDK, using native function calling and structured tool declarations.
-- **Semantic Skills Mode**: The same key enables canonical skill names, aliases, model-derived categories and typed relationships. Embeddings are persisted and reused; the graph falls back to published-opportunity co-occurrence when the key is blank or inference fails.
-
-### Step 1: Obtain a Gemini API Key
-1. Go to the [Google AI Studio](https://aistudio.google.com/).
-2. Sign in with your Google account.
-3. Click **Get API key** in the top navigation.
-4. Click **Create API key** (select a Google Cloud project or create a default project).
-5. Copy your generated key (starts with `AIzaSy...`).
-
-### Step 2: Configure Environment Variables in the API Service
-Open `services/api/.env` (or copy from `services/api/.env.example` if `.env` does not exist yet):
-
-```ini
-# services/api/.env
-
-# Paste your Google AI Studio API key here
-GEMINI_API_KEY="AIzaSyYourGeneratedGeminiKeyHere"
-
-# Choose your preferred Gemini model (defaults to gemini-3.6-flash)
-GEMINI_MODEL="gemini-3.6-flash"
-GEMINI_EMBEDDING_MODEL="gemini-embedding-001"
-SEMANTIC_SKILLS_ENABLED=true
-```
-
-### Step 3: Supported Gemini Models
-The following models are supported out of the box:
-- `gemini-3.6-flash` (**Recommended**): Current fast model used for structured skill classification and agent interactions.
-
-### Step 4: Restart the FastAPI Server
-Restart your FastAPI backend server to load the new environment variables:
-
-```bash
-cd services/api
-.\.venv\Scripts\uvicorn app.main:app --reload --port 8000
-```
-
-### Step 5: Verify Live Function Calling
-1. Open the frontend at `http://localhost:5173/coach`.
-2. Sign in as `youth@example.com` (`Password123!`).
-3. Send a natural English prompt:
-   > *"Hi! I'm 17 years old, live in Chesham (postcode HP5 2UR), studying for my A-Levels. I know Python, Customer Service, and can work on Saturdays. What roles do you recommend?"*
-4. Observe that Gemini invokes `propose_youth_profile_update` with structured arguments, generating the interactive review card, and then invokes `get_my_recommended_opportunities` to retrieve personalized listings.
-
-### Automatic Fallback & Safety Guarantees
-- **Graceful Degradation**: If the Gemini API returns a rate-limit error (`429`), invalid key error, or network timeout, the application automatically catches the exception, logs a warning in the server console, and seamlessly falls back to the deterministic local orchestrator. The user's chat session is never interrupted.
-- **Strict Role Authorization**: Gemini cannot access or execute any function that is not in the allow-list for the user's role.
-- **No Direct Database Access**: Gemini only receives typed tool inputs and outputs. Database reads/writes are performed solely by FastAPI and SQLAlchemy with full validation.

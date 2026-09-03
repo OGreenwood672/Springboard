@@ -15,18 +15,18 @@ export const Badge: React.FC<BadgeProps> = ({
   className = '',
 }) => {
   const variantStyles = {
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-    sky: 'bg-sky-50 text-sky-700 border-sky-200/80',
-    indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200/80',
-    rose: 'bg-rose-50 text-rose-700 border-rose-200/80',
-    purple: 'bg-purple-50 text-purple-700 border-purple-200/80',
-    slate: 'bg-slate-100 text-slate-700 border-slate-200',
+    emerald: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 shadow-xs',
+    sky: 'bg-sky-500/15 text-sky-300 border-sky-500/30 shadow-xs',
+    indigo: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30 shadow-xs',
+    amber: 'bg-amber-500/15 text-amber-300 border-amber-500/30 shadow-xs',
+    rose: 'bg-rose-500/15 text-rose-300 border-rose-500/30 shadow-xs',
+    purple: 'bg-purple-500/15 text-purple-300 border-purple-500/30 shadow-xs',
+    slate: 'bg-slate-800 text-slate-300 border-slate-700 shadow-xs',
   };
 
   const sizeStyles = {
-    sm: 'text-xs px-2 py-0.5 font-medium',
-    md: 'text-xs px-2.5 py-1 font-semibold tracking-wide',
+    sm: 'text-[10px] px-2 py-0.5 font-mono font-bold tracking-tight',
+    md: 'text-xs px-2.5 py-0.5 font-mono font-bold tracking-tight',
   };
 
   return (

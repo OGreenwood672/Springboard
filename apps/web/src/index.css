@@ -1,16 +1,22 @@
+@import "leaflet/dist/leaflet.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  html {
+    @apply bg-slate-950 text-slate-100;
+    color-scheme: dark;
+  }
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-950;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
 .uk-focus-ring:focus-visible {
-  @apply outline-none ring-2 ring-emerald-600 ring-offset-2;
+  @apply outline-none ring-2 ring-emerald-400 ring-offset-2 ring-offset-slate-950;
 }
 
 .react-flow__node-skill {
@@ -22,29 +28,40 @@
 }
 
 .react-flow__node-skill:focus-visible {
-  outline: 2px solid #0f766e;
+  outline: 2px solid #10b981;
   outline-offset: 4px;
 }
 
 .skill-graph-node--selected {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.22), 0 8px 20px rgba(15, 23, 42, 0.12);
+  border-color: #10b981 !important;
+  box-shadow:
+    0 0 0 3px rgba(16, 185, 129, 0.35),
+    0 8px 24px rgba(0, 0, 0, 0.45) !important;
 }
 
 .skill-graph-controls {
   margin: 12px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background-color: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .skill-graph-controls button {
   width: 34px;
   height: 34px;
   border-bottom: 0;
-  border-right: 1px solid #e2e8f0;
-  color: #475569;
+  border-right: 1px solid #334155;
+  background-color: transparent;
+  color: #94a3b8;
+  transition: all 0.15s ease-in-out;
+}
+
+.skill-graph-controls button:hover {
+  background-color: #1e293b;
+  color: #f8fafc;
 }
 
 .skill-graph-controls button:last-child {
@@ -53,5 +70,61 @@
 
 .react-flow__attribution {
   font-size: 9px;
-  opacity: 0.55;
+  opacity: 0.35;
+  color: #64748b;
+}
+
+/* Custom Leaflet Map styling */
+.leaflet-container {
+  font-family: inherit;
+  width: 100%;
+  height: 100%;
+  border-radius: 1.25rem;
+  z-index: 1;
+  background-color: #020617 !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  padding: 0;
+  overflow: hidden;
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #334155;
+}
+
+.leaflet-popup-tip {
+  background: #0f172a !important;
+  border: 1px solid #334155;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  line-height: 1.4;
+  color: #f1f5f9 !important;
+}
+
+.leaflet-custom-tooltip {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+  border-radius: 0.75rem !important;
+  padding: 0.5rem 0.75rem !important;
+  font-family: monospace !important;
+  font-size: 11px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+}
+.leaflet-custom-tooltip:before {
+  border-top-color: #0f172a !important;
+}
+
+.leaflet-business-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.leaflet-business-tooltip:before {
+  display: none !important;
 }

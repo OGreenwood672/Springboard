@@ -1,5 +1,11 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import { Navbar } from "./components/common/Navbar";
@@ -34,146 +40,214 @@ import { BusinessOpportunitiesPage } from "./pages/business/BusinessOpportunitie
 import { EditOpportunityPage } from "./pages/business/EditOpportunityPage";
 import { OpportunityApplicantsPage } from "./pages/business/OpportunityApplicantsPage";
 
+// Council Pages
+import { CouncilDashboardPage } from "./pages/council/CouncilDashboardPage";
+import { WageSubsidyMapPage } from "./pages/council/WageSubsidyMapPage";
+import { EligibleCompaniesPage } from "./pages/council/EligibleCompaniesPage";
+import { SubsidySchemesPage } from "./pages/council/SubsidySchemesPage";
+import { AllocationsPage } from "./pages/council/AllocationsPage";
+import { CouncilAnalyticsPage } from "./pages/council/CouncilAnalyticsPage";
+import { CouncilAdvisorPage } from "./pages/council/CouncilAdvisorPage";
+
 const AppContent: React.FC = () => {
   const location = useLocation();
   const isKnowledgeWorkspace = location.pathname === "/knowledge";
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-slate-950 text-slate-100">
       <Navbar />
-      <main className="min-h-0 flex-1">
+      <main className="min-h-0 flex-1 bg-slate-950">
         <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/sign-in" element={<SignInPage />} />
-                <Route path="/sign-up" element={<SignUpPage />} />
-                <Route
-                  path="/opportunities"
-                  element={<OpportunityBrowsePage />}
-                />
-                <Route
-                  path="/opportunities/:id"
-                  element={<OpportunityDetailPage />}
-                />
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/sign-in" element={<SignInPage />} />
+          <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/opportunities" element={<OpportunityBrowsePage />} />
+          <Route
+            path="/opportunities/:id"
+            element={<OpportunityDetailPage />}
+          />
 
-                {/* Youth Protected Routes */}
-                <Route
-                  path="/coach"
-                  element={
-                    <ProtectedRoute allowedRoles={["youth"]}>
-                      <YouthCoachPage />
-                    </ProtectedRoute>
+          {/* Youth Protected Routes */}
+          <Route
+            path="/coach"
+            element={
+              <ProtectedRoute allowedRoles={["youth"]}>
+                <YouthCoachPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute allowedRoles={["youth"]}>
+                <YouthOnboardingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute allowedRoles={["youth"]}>
+                <YouthProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/knowledge"
+            element={
+              <ProtectedRoute allowedRoles={["youth"]}>
+                <React.Suspense
+                  fallback={
+                    <div
+                      className="flex h-[calc(100dvh-4rem)] items-center justify-center bg-slate-950"
+                      role="status"
+                      aria-label="Loading knowledge map"
+                    >
+                      <span className="h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-emerald-400" />
+                    </div>
                   }
-                />
-                <Route
-                  path="/onboarding"
-                  element={
-                    <ProtectedRoute allowedRoles={["youth"]}>
-                      <YouthOnboardingPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute allowedRoles={["youth"]}>
-                      <YouthProfilePage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/knowledge"
-                  element={
-                    <ProtectedRoute allowedRoles={["youth"]}>
-                      <React.Suspense
-                        fallback={
-                          <div className="flex h-[calc(100dvh-4rem)] items-center justify-center bg-slate-50" role="status" aria-label="Loading knowledge map">
-                            <span className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-emerald-600" />
-                          </div>
-                        }
-                      >
-                        <YouthKnowledgePage />
-                      </React.Suspense>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/applications"
-                  element={
-                    <ProtectedRoute allowedRoles={["youth"]}>
-                      <YouthApplicationsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/matches"
-                  element={
-                    <ProtectedRoute allowedRoles={["youth"]}>
-                      <YouthMatchesPage />
-                    </ProtectedRoute>
-                  }
-                />
+                >
+                  <YouthKnowledgePage />
+                </React.Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/applications"
+            element={
+              <ProtectedRoute allowedRoles={["youth"]}>
+                <YouthApplicationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/matches"
+            element={
+              <ProtectedRoute allowedRoles={["youth"]}>
+                <YouthMatchesPage />
+              </ProtectedRoute>
+            }
+          />
 
-                {/* Business Protected Routes */}
-                <Route
-                  path="/business"
-                  element={<Navigate to="/business/assistant" replace />}
-                />
-                <Route
-                  path="/business/assistant"
-                  element={
-                    <ProtectedRoute allowedRoles={["business"]}>
-                      <BusinessAssistantPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/business/onboarding"
-                  element={
-                    <ProtectedRoute allowedRoles={["business"]}>
-                      <BusinessOnboardingPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/business/profile"
-                  element={
-                    <ProtectedRoute allowedRoles={["business"]}>
-                      <BusinessProfilePage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/business/opportunities"
-                  element={
-                    <ProtectedRoute allowedRoles={["business"]}>
-                      <BusinessOpportunitiesPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/business/opportunities/create"
-                  element={<Navigate to="/business/assistant" replace />}
-                />
-                <Route
-                  path="/business/opportunities/:id/edit"
-                  element={
-                    <ProtectedRoute allowedRoles={["business"]}>
-                      <EditOpportunityPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/business/opportunities/:id/applicants"
-                  element={
-                    <ProtectedRoute allowedRoles={["business"]}>
-                      <OpportunityApplicantsPage />
-                    </ProtectedRoute>
-                  }
-                />
+          {/* Business Protected Routes */}
+          <Route
+            path="/business"
+            element={<Navigate to="/business/assistant" replace />}
+          />
+          <Route
+            path="/business/assistant"
+            element={
+              <ProtectedRoute allowedRoles={["business"]}>
+                <BusinessAssistantPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/business/onboarding"
+            element={
+              <ProtectedRoute allowedRoles={["business"]}>
+                <BusinessOnboardingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/business/profile"
+            element={
+              <ProtectedRoute allowedRoles={["business"]}>
+                <BusinessProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/business/opportunities"
+            element={
+              <ProtectedRoute allowedRoles={["business"]}>
+                <BusinessOpportunitiesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/business/opportunities/create"
+            element={<Navigate to="/business/assistant" replace />}
+          />
+          <Route
+            path="/business/opportunities/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={["business"]}>
+                <EditOpportunityPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/business/opportunities/:id/applicants"
+            element={
+              <ProtectedRoute allowedRoles={["business"]}>
+                <OpportunityApplicantsPage />
+              </ProtectedRoute>
+            }
+          />
 
-                {/* Catch all fallback */}
-                <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Council Protected Routes */}
+          <Route
+            path="/council"
+            element={
+              <ProtectedRoute allowedRoles={["council"]}>
+                <CouncilDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/council/map"
+            element={
+              <ProtectedRoute allowedRoles={["council"]}>
+                <WageSubsidyMapPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/council/companies"
+            element={
+              <ProtectedRoute allowedRoles={["council"]}>
+                <EligibleCompaniesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/council/schemes"
+            element={
+              <ProtectedRoute allowedRoles={["council"]}>
+                <SubsidySchemesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/council/allocations"
+            element={
+              <ProtectedRoute allowedRoles={["council"]}>
+                <AllocationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/council/analytics"
+            element={
+              <ProtectedRoute allowedRoles={["council"]}>
+                <CouncilAnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/council/advisor"
+            element={
+              <ProtectedRoute allowedRoles={["council"]}>
+                <CouncilAdvisorPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Catch all fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       {!isKnowledgeWorkspace && <Footer />}
