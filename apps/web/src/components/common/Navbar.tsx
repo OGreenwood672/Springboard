@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import {
   Compass,
   Briefcase,
@@ -20,10 +21,13 @@ import {
   Coins,
   FileSpreadsheet,
   TrendingUp,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
   const { user, role, business, council, isAuthenticated, logout } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -97,8 +101,24 @@ export const Navbar: React.FC = () => {
               {getDashboardBadge()}
             </div>
 
-            {/* Right Action Controls: Profile Settings & Sign Out */}
+            {/* Right Action Controls: Theme Switcher, Profile Settings & Sign Out */}
             <div className="hidden md:flex items-center gap-3">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex items-center justify-center w-9 h-9 rounded-xl text-slate-400 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer shadow-sm"
+                title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                aria-label={
+                  isDark ? "Switch to light mode" : "Switch to dark mode"
+                }
+              >
+                {isDark ? (
+                  <Sun className="w-4 h-4 text-amber-400 hover:rotate-45 transition-transform" />
+                ) : (
+                  <Moon className="w-4 h-4 text-indigo-400 hover:-rotate-12 transition-transform" />
+                )}
+              </button>
+
               {isAuthenticated ? (
                 <div className="flex items-center gap-3">
                   {role === "youth" ? (
@@ -170,8 +190,23 @@ export const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* Mobile hamburger button */}
-            <div className="md:hidden flex items-center">
+            {/* Mobile Controls: Theme toggle + hamburger */}
+            <div className="md:hidden flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800"
+                title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                aria-label={
+                  isDark ? "Switch to light mode" : "Switch to dark mode"
+                }
+              >
+                {isDark ? (
+                  <Sun className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <Moon className="w-4 h-4 text-indigo-400" />
+                )}
+              </button>
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800"
@@ -507,6 +542,30 @@ export const Navbar: React.FC = () => {
               </Link>
             </>
           )}
+
+          {/* Theme switcher */}
+          <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800">
+            <span className="text-xs font-bold text-slate-300">
+              Theme Appearance
+            </span>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-750 cursor-pointer"
+            >
+              {isDark ? (
+                <>
+                  <Sun className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Dark Mode</span>
+                </>
+              )}
+            </button>
+          </div>
 
           {isAuthenticated ? (
             <div className="pt-3 border-t border-slate-800 space-y-2">
