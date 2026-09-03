@@ -10,6 +10,8 @@
     "build:council": "pnpm --filter @springboard/council build",
     "test:council": "pnpm --filter @springboard/council test",
     "build:types": "pnpm --filter @springboard/shared-types build",
+    "dev:api": "cd services/api && uvicorn app.main:app --reload --port 8000",
+    "start:api": "cd services/api && uvicorn app.main:app --port 8000",
     "test:api": "cd services/api && .\\.venv\\Scripts\\pytest.exe"
   },
   "devDependencies": {
