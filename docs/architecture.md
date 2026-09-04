@@ -1,55 +1,65 @@
 # Springboard UK — Technical Architecture & System Design
 
-Springboard is a multi-sided economic platform designed to eliminate youth unemployment and underemployment across the United Kingdom. It unifies **young people (aged 14–24)**, **local micro and small businesses (SMEs)**, and **UK Local Authorities (Councils)** through conversation-first AI agents, transparent deterministic matching algorithms, an interactive visual skills knowledge graph, and a geospatial wage subsidy co-funding engine.
+Springboard is a multi-sided economic platform designed to eliminate youth unemployment and underemployment across the United Kingdom. It unifies **candidates (aged 14–24)**, **local micro and small businesses (SMEs)**, and **UK Local Authorities (Councils)** through conversation-first AI agents, transparent deterministic matching algorithms, an interactive visual skills knowledge graph, and a geospatial wage subsidy co-funding engine.
 
 ---
 
 ## 1. High-Level System Architecture
 
 ```
-┌────────────────────────────────────────────────────────┐   ┌────────────────────────────────────────────────────────┐
-│             apps/web (Port 5173)                       │   │             apps/council (Port 5174)                   │
-│   React 18 • TypeScript • Vite • Tailwind CSS          │   │   React 18 • TypeScript • Vite • Tailwind CSS          │
-│   • Youth Job Coach AI (/coach)                        │   │   • Council AI Policy Director Chat (Command Center)   │
-│   • Skills & Knowledge Graph (/knowledge via XYFlow)   │   │   • Leaflet & CartoDB Geospatial Map Engine            │
-│   • Recruiter Assistant AI (/business/assistant)       │   │   • IMD Deprivation Catchment Layer                    │
-│   • Application Tracker & Opportunity Management       │   │   • Wage Subsidy Schemes & Allocations Ledger          │
-└───────────────────────────┬────────────────────────────┘   └───────────────────────────┬────────────────────────────┘
-                            │                                                            │
-                            └─────────────────────────────┬──────────────────────────────┘
-                                                          │ JSON / REST API (Bearer JWT)
-                            ┌─────────────────────────────▼──────────────────────────────┐
-                            │               services/api (Port 8000)                     │
-                            │      Python 3.12+ • FastAPI • Pydantic v2 • SQLAlchemy 2   │
-                            ├────────────────────────────────────────────────────────────┤
-                            │  Routers:                                                  │
-                            │  • /auth (Argon2 hash, stateless JWT)                      │
-                            │  • /profiles (Youth profile & qualifications)              │
-                            │  • /businesses (SME profile & wage gap metrics)            │
-                            │  • /opportunities (Listings, pay, workplace arrangement)   │
-                            │  • /applications (Tracking, submission workflow)           │
-                            │  • /matches (Deterministic 0–100 scoring & factor explain) │
-                            │  • /conversations (Multi-turn agent chat & actions)        │
-                            │  • /councils (Map data, schemes, allocations, analytics)   │
-                            ├────────────────────────────────────────────────────────────┤
-                            │  Agent Layer (Dual-Mode Orchestration):                    │
-                            │  • YouthAgent • BusinessAgent • CouncilAgent               │
-                            │  • Allow-listed ToolExecutor (Pydantic validated)          │
-                            │  • PendingAction Confirmation Gatekeeper (Human-in-the-loop)│
-                            │  • Gemini API Function Calling + Offline Rule Fallback     │
-                            ├────────────────────────────────────────────────────────────┤
-                            │  Services & Engines:                                       │
-                            │  • MatchingEngine (Deterministic 0-100 compatibility)      │
-                            │  • KnowledgeGraphService (Semantic skill clustering)       │
-                            │  • WageSubsidyService (Budget deduction & refund ledger)   │
-                            │  • Geocoding & Haversine Distance Calculator               │
-                            └─────────────────────────────┬──────────────────────────────┘
-                                                          │ SQLAlchemy 2 ORM
-                            ┌─────────────────────────────▼──────────────────────────────┐
-                            │                PostgreSQL 16 + PostGIS 3.4                 │
-                            │      (With automatic zero-config SQLite standalone fallback│
-                            │       for local development and offline unit tests)        │
-                            └────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   CLIENT LAYER (Browser / Mobile)                                │
+│                                                                                                  │
+│   ┌──────────────────────────────────────────────────┐  ┌────────────────────────────────────┐   │
+│   │             apps/web (Port 3000 / Vercel)        │  │     apps/council (Port 5174)       │   │
+│   │   React 18 • TypeScript • Vite • Tailwind CSS    │  │   React 18 • TypeScript • Vite     │   │
+│   │   • Candidate Portal (/coach, /matches, /profile)│  │   • Council Policy Director Chat   │   │
+│   │   • Skills Knowledge Graph (/knowledge via XYFlow│  │   • Leaflet Geospatial Map Engine  │   │
+│   │   • Business Recruiter AI (/business/assistant)  │  │   • IMD Deprivation Layers         │   │
+│   │   • Council Subsidy Map & AI Appraisal Engine    │  │   • Schemes & Allocations Ledger   │   │
+│   │   • Theme Engine (Light Mode / Dark Mode)        │  └─────────────────┬──────────────────┘   │
+│   └─────────────────────────┬────────────────────────┘                    │                      │
+└─────────────────────────────┼─────────────────────────────────────────────┼──────────────────────┘
+                              │                                             │
+                              └──────────────────────┬──────────────────────┘
+                                                     │ JSON / REST API (Bearer JWT)
+                              ┌──────────────────────▼──────────────────────┐
+                              │     Vercel ASGI Gateway (api/index.py)       │
+                              │     Mounts FastAPI at /api and root /        │
+                              └──────────────────────┬──────────────────────┘
+                                                     │
+                              ┌──────────────────────▼──────────────────────┐
+                              │          services/api (Port 8000)           │
+                              │ Python 3.12+ • FastAPI • Pydantic 2 • SQLA 2│
+                              ├─────────────────────────────────────────────┤
+                              │ Routers:                                    │
+                              │ • /auth (Argon2 hash, stateless JWT)        │
+                              │ • /profiles (Candidate profile & skills)    │
+                              │ • /businesses (SME profile & wage gap)      │
+                              │ • /opportunities (Listings, pay, workplace) │
+                              │ • /applications (Tracking, submission)      │
+                              │ • /matches (Deterministic 0–100 scoring)    │
+                              │ • /conversations (Multi-turn agent chat)    │
+                              │ • /councils (Map data, schemes, allocations)│
+                              ├─────────────────────────────────────────────┤
+                              │ Agent Layer (Dual-Mode Orchestration):      │
+                              │ • YouthAgent • BusinessAgent • CouncilAgent │
+                              │ • Allow-listed ToolExecutor (Pydantic v2)   │
+                              │ • PendingAction Gatekeeper (Human-in-loop)  │
+                              │ • Gemini API Function Calling + Rule Mode   │
+                              ├─────────────────────────────────────────────┤
+                              │ Services & Engines:                         │
+                              │ • MatchingEngine (Deterministic 0-100 fit)  │
+                              │ • KnowledgeGraphService (Skill clustering)  │
+                              │ • WageSubsidyService (Ledger & refunds)     │
+                              │ • Geocoding & Haversine Distance Calculator │
+                              └──────────────────────┬──────────────────────┘
+                                                     │ SQLAlchemy 2 ORM
+                              ┌──────────────────────▼──────────────────────┐
+                              │         PostgreSQL 16 + PostGIS 3.4          │
+                              │ (Automatic fallback to SQLite standalone     │
+                              │  springboard.db for zero-config deployment) │
+                              └─────────────────────────────────────────────┘
 ```
 
 ---
@@ -60,11 +70,12 @@ Springboard is engineered around a tripartite economic feedback loop:
 
 ```mermaid
 flowchart TD
-    subgraph Youth["1. Youth Candidates (14-24)"]
+    subgraph Candidate["1. Candidates (14-24)"]
         Y1["Build Profile via Job Coach AI"]
         Y2["Explore Visual Skills Knowledge Graph"]
         Y3["Access Real Living Wage (£11.44+/hr) Roles"]
         Y4["1-Click Application Confirmation"]
+        Y5["Curate Opportunities with 'Not Interested'"]
     end
 
     subgraph Business["2. Local Micro & Small Businesses (SMEs)"]
@@ -75,57 +86,70 @@ flowchart TD
     end
 
     subgraph Council["3. Local Authority Councils"]
-        C1["Spatial IMD Deprivation Mapping"]
-        C2["Identify High-Priority SME Wage Gaps"]
+        C1["Spatial Deprivation & Wage Gap Mapping"]
+        C2["AI Employer Viability & Review Appraisal"]
         C3["Pledge Hourly Top-Up Subsidies (e.g. £4.50/hr)"]
         C4["Track Social Mobility ROI (£3.80x Treasury Green Book)"]
     end
 
     Council -- "Hourly Wage Grants (£4.50/hr)" --> Business
-    Business -- "Living Wage Employment (£11.50/hr total)" --> Youth
-    Youth -- "Local Labor & Skill Development" --> Business
+    Business -- "Living Wage Employment (£11.50/hr total)" --> Candidate
+    Candidate -- "Local Labor & Skill Development" --> Business
     Business -- "Retention & High-Street Economic Vitality" --> Council
-    Youth -- "Social Mobility & Reduced NEET Rate" --> Council
+    Candidate -- "Social Mobility & Reduced NEET Rate" --> Council
 ```
 
 ---
 
 ## 3. Frontend Architecture
 
-The frontend is partitioned into two specialized Single Page Applications (SPAs) within a `pnpm` monorepo:
+The frontend architecture consists of the main application (`apps/web`), the dedicated council dashboard (`apps/council`), and the shared domain package (`packages/shared-types`).
 
-### A. Main Web Portal (`apps/web` on Port 5173)
-- **Framework**: React 18, Vite, TypeScript, Tailwind CSS, React Router 6, `@xyflow/react` (React Flow), Lucide Icons.
-- **Audience**: Young People (14–24) and Local Businesses/Employers.
-- **Key Modules**:
-  - **Job Coach AI (`/coach`)**: Multi-turn conversational onboarding, automated profile extraction, and opportunity discovery.
-  - **Interactive Skills Knowledge Graph (`/knowledge`)**: Node-edge interactive graph rendered via `@xyflow/react`, showing existing skills, connected opportunities, and expandable "frontier skills".
-  - **Recruiter Assistant AI (`/business/assistant`)**: Conversational vacancy drafting, automatic wage gap identification, and privacy-safe candidate discovery.
-  - **Opportunity Hub & Application Tracker (`/applications`)**: Deterministic match score explanations, real-time application status tracking.
+### A. Main Web Portal (`apps/web` on Port 3000)
 
-### B. Council Wage Subsidy Command Center (`apps/council` on Port 5174)
-- **Framework**: React 18, Vite, TypeScript, Tailwind CSS, React Router 6, Leaflet, Lucide Icons.
-- **Audience**: Local Council Leaders, Economic Development Directors, and Regeneration Officers.
-- **Key Modules**:
-  - **Executive Command Center (`/`)**: Split-screen workflow with an interactive Geospatial Map on the left and the **Council AI Policy Director** on the right.
-  - **High-Fidelity Geospatial Map (`/map`)**: OpenStreetMap & CartoDB tile layers (Dark Matter / Positron Light), Index of Multiple Deprivation (IMD) decile overlays, custom pulsating pins, and an evaluation drawer.
-  - **SME Directory (`/companies`)**: Filterable roster of local employers categorized by company size, hourly wage gap, and deprivation catchment score.
-  - **Subsidy Schemes (`/schemes`)**: Ring-fenced funding pool creator with target postcodes, industry sectors, and hourly subsidy caps.
-  - **Allocations Ledger (`/allocations`)**: Audit log of all committed wage grants with instant status transitions (Active, Completed, Cancelled with refund).
-  - **Social ROI Analytics (`/analytics`)**: Treasury Green Book-aligned £3.80x multiplier calculations, hours co-funded, and youth retention rates.
+- **Framework**: React 18, Vite, TypeScript, Tailwind CSS, React Router 6, `@xyflow/react` (React Flow), Leaflet, Lucide Icons.
+- **Portals**:
+  1. **Candidate Portal** (`/coach`, `/matches`, `/applications`, `/profile`, `/knowledge`):
+     - **Job Coach AI (`/coach`)**: Multi-turn conversational onboarding, automated skill extraction, and vacancy discovery with human-in-the-loop action cards.
+     - **Match Matrix (`/matches`)**: Deterministic match score breakdown. Includes an interactive **"Not Interested"** button on opportunity cards that permanently dismisses unwanted roles and prevents future recommendations.
+     - **My Applications (`/applications`)**: Real-time status tracking for submitted applications. Zero-state guides candidates directly to their personalized Match Matrix.
+     - **Skills Knowledge Graph (`/knowledge`)**: Node-edge interactive graph rendered via `@xyflow/react`, showing existing skills, connected opportunities, and expandable "frontier skills".
+  2. **Business Portal** (`/business/assistant`, `/business/opportunities`, `/business/profile`):
+     - **Recruiter Assistant AI (`/business/assistant`)**: Conversational vacancy drafting, automatic wage gap identification, and privacy-safe candidate discovery.
+     - **Vacancy Management**: Real-time tracking of candidate applicants and match scores.
+  3. **Council Experience** (`/council`, `/council/map`, `/council/advisor`):
+     - **Geospatial Wage Subsidy Map (`/council/map`)**: High-performance OpenStreetMap integration (zero external API keys required). Displays Buckinghamshire wards with sector-categorized business markers (Tech, Health, Manufacturing, Retail, Creative, Green, Community).
+     - **AI Subsidy Scoring & Ranking**: Clicking any business marker inspects the employer directly in the side panel—displaying AI viability ratings, past apprentice reviews, and funding recommendations without obscuring map cartography.
+     - **Reset View Control**: Convenient reset button in the header top-right aligned with the ward filter.
 
-### C. Shared Domain Types (`packages/shared-types`)
-- Compiled TypeScript library imported by both frontends and aligned with backend Pydantic schemas.
-- Exports contracts for `User`, `YouthProfile`, `Business`, `Opportunity`, `Application`, `Match`, `Council`, `WageSubsidyScheme`, `WageSubsidyAllocation`, and `CouncilMapData`.
+### B. Dual-Theme Engine (Light Mode & Dark Mode)
+
+- **State Management**: Provided by [**`ThemeContext.tsx`**](file:///c:/Users/green/OneDrive/Desktop/Springboard/apps/web/src/context/ThemeContext.tsx), exposing `theme` (`'dark' | 'light'`), `toggleTheme()`, and `isDark`.
+- **Storage & Detection**: Automatically persists preference in `localStorage` (`'springboard_theme'`) with fallback to browser `prefers-color-scheme`.
+- **CSS Strategy**:
+  - `tailwind.config.js` sets `darkMode: "class"`.
+  - Toggling adds/removes `class="light"` on `document.documentElement` and synchronizes the browser `color-scheme` property.
+  - Comprehensive scoped rules in `apps/web/src/index.css` under `html.light` map dark slate backgrounds (`bg-slate-950` -> `#f8fafc`, `bg-slate-900` -> `#ffffff`), borders (`border-slate-800` -> `#e2e8f0`), typography (`text-white` -> `#0f172a`), inputs, selects, badges, and Leaflet tooltips.
+  - Smooth 0.2s color and background transition on `<html>` eliminates harsh visual flashes.
+
+### C. Monorepo TypeScript Path Resolution
+
+- To avoid cyclic compilation bottlenecks and allow development without pre-compiled declaration files, `apps/web/tsconfig.json` and `apps/council/tsconfig.json` map domain types directly to source:
+  ```json
+  "paths": {
+    "@/*": ["./src/*"],
+    "@springboard/shared-types": ["../../packages/shared-types/src/index.ts"]
+  }
+  ```
+- This guarantees `tsc --noEmit` and Vite build execute reliably in clean CI and Vercel environments where `packages/shared-types/dist` is not checked into version control.
 
 ---
 
 ## 4. Backend Architecture (`services/api`)
 
-The backend is built with **Python 3.12+**, **FastAPI**, **SQLAlchemy 2**, and **Pydantic v2**.
+Built with **Python 3.12+**, **FastAPI**, **SQLAlchemy 2**, and **Pydantic v2**.
 
 ### A. Dual-Mode Agent Orchestrator Engine
-To guarantee zero-cost local prototyping, seamless automated CI testing, and production LLM capabilities, Springboard features a **dual-mode agent architecture**:
 
 ```
                   ┌───────────────────────────────┐
@@ -161,124 +185,90 @@ To guarantee zero-cost local prototyping, seamless automated CI testing, and pro
                Wait for User Confirm
 ```
 
-1. **Live Gemini Mode**: When `GEMINI_API_KEY` is provided, Springboard connects to Google Gemini via the official `google-genai` SDK using native function calling with allow-listed tool declarations.
-2. **Offline Rule Mode**: When running without an API key (or during network outage/rate limits), the platform automatically falls back to an offline rule orchestrator (`YouthAgentOrchestrator`, `BusinessAgentOrchestrator`, `CouncilAgentOrchestrator`) that executes the **exact same typed tools** and generates identical interactive UI cards.
-3. **No Direct Database Access**: The LLM *never* has SQL access or execution privileges. It can only call typed Python functions that enforce role boundaries and resource ownership.
+1. **Live Gemini Mode**: When `GEMINI_API_KEY` is present, connects via `google-genai` using typed function calling.
+2. **Offline Rule Mode**: Zero-cost fallback executing the identical allow-listed tools, guaranteeing reliable local development and 100% test suite reproducibility.
+3. **Strict Sandboxing**: The agent has no raw database access; every operation is dispatched through typed Pydantic endpoints that validate permissions and resource ownership.
 
-### B. The `PendingAction` Gatekeeper (Strict Human-in-the-Loop)
-Any action that alters database state (saving a profile, publishing a job, submitting an application, or committing a council wage grant) **cannot be executed autonomously by the AI**.
-- The agent calls a tool that writes a `PendingAction` record (status `pending`, with a 24h to 72h TTL).
-- The chat interface renders an interactive **UI Card** (e.g., `SubsidyOfferCard`, `ConfirmationCard`, `OpportunityDraftCard`).
-- The action is only executed when the human user clicks **"Confirm"** or explicitly messages confirmation.
+### B. The `PendingAction` Gatekeeper (Human-in-the-Loop)
+
+Any mutation (saving a profile, posting a job, submitting an application, committing council funds) creates a `PendingAction` record (24–72h TTL) and returns an interactive UI card. The mutation is committed only when the human clicks "Confirm".
 
 ---
 
 ## 5. Deterministic Matching Engine
 
-Unlike black-box LLM matching, Springboard implements an explainable, deterministic 0–100 compatibility scoring algorithm in `app/services/matching_service.py`:
+Springboard avoids black-box scoring by calculating an explainable 0–100 compatibility score:
 
 $$\text{Total Score} = S_{\text{type}} (25\%) + S_{\text{skills}} (35\%) + S_{\text{location}} (25\%) + S_{\text{avail}} (10\%) + S_{\text{qual}} (5\%)$$
 
 ### Factor Breakdown:
-1. **Opportunity Type Fit ($S_{\text{type}}$, Max 25 pts)**:
-   - 25 pts: Target opportunity type is in candidate's preferred list (`part_time_job`, `work_experience`, `volunteering`).
-   - 15 pts: Candidate has no preference stated (neutral flexibility).
-   - 5 pts: Partial cross-exposure.
-2. **Skills Overlap ($S_{\text{skills}}$, Max 35 pts)**:
-   - Required skills (25 pts): $\frac{\text{Matched Required Skills}}{\text{Total Required Skills}} \times 25.0$
-   - Preferred skills (10 pts): $\frac{\text{Matched Preferred Skills}}{\text{Total Preferred Skills}} \times 10.0$ (or 10 pts if none requested).
-3. **Geodesic Location & Travel Radius ($S_{\text{location}}$, Max 25 pts)**:
-   - Remote positions: 25 pts.
-   - In-person: Exact Haversine distance ($d$) computed between candidate coordinates and opportunity coordinates.
-     $$\text{If } d \le \text{MaxTravelKm}: \quad S_{\text{location}} = \max\left(5.0, \; 25.0 \times \left(1.0 - \frac{d}{1.2 \times \text{MaxTravelKm}}\right)\right)$$
-     $$\text{If } d > \text{MaxTravelKm}: \quad S_{\text{location}} = 0.0$$
-4. **Schedule Availability ($S_{\text{avail}}$, Max 10 pts)**:
-   - 10 pts: Candidate's available days (`Saturday`, `Sunday`, `Wednesday`) overlap with the employer's shift commitment.
-   - 8 pts: Moderate/flexible default.
-5. **Qualification Bonus ($S_{\text{qual}}$, Max 5 pts)**:
-   - 5 pts if candidate has achieved accredited GCSE, BTEC, or A-Level qualifications.
 
-Every calculated match stores this full factor breakdown in JSON, enabling the AI Job Coach to explain *exactly* why an opportunity was recommended.
+1. **Opportunity Type Fit ($S_{\text{type}}$, Max 25 pts)**: Alignment with candidate's stated preference (`part_time_job`, `work_experience`, `volunteering`).
+2. **Skills Overlap ($S_{\text{skills}}$, Max 35 pts)**:
+   $$\text{Score} = \left(\frac{\text{Matched Required}}{\text{Total Required}} \times 25\right) + \left(\frac{\text{Matched Preferred}}{\text{Total Preferred}} \times 10\right)$$
+3. **Geodesic Travel Radius ($S_{\text{location}}$, Max 25 pts)**: Haversine distance calculation scaled against candidate's maximum travel radius.
+4. **Availability ($S_{\text{avail}}$, Max 10 pts)**: Overlap between candidate availability and vacancy shift requirements.
+5. **Accredited Qualifications ($S_{\text{qual}}$, Max 5 pts)**: GCSE, BTEC, or A-Level attainment bonus.
+
+### Candidate Dismissal Logic ("Not Interested"):
+
+When a candidate marks an opportunity as "Not Interested", the recommendation engine permanently suppresses the vacancy from future suggestion sets and adjusts candidate sector weights accordingly.
 
 ---
 
 ## 6. Wage Subsidy Co-Funding Engine
 
-### The Problem: The Minimum Wage Affordability Gap
-Micro and small businesses (cafés, retail shops, creative studios, trades) often operate on thin operating margins and cannot afford the UK National Living Wage (£11.44/hr) for entry-level youth roles.
+### The Problem: Minimum Wage Affordability Gap
+
+Micro and small businesses operating on thin margins cannot afford the UK Real Living Wage (£11.44/hr) for junior entry-level roles.
 
 ### The Subsidy Mechanism
-1. **Employer Affordable Base Wage**: What the SME can sustainably pay (e.g. £7.00/hr).
+
+1. **Employer Affordable Base Wage**: e.g., £7.00/hr.
 2. **Target UK Real Living Wage**: £11.44/hr.
-3. **Hourly Wage Gap**: $\text{Gap} = \text{Target Wage} - \text{Base Wage} = £11.44 - £7.00 = £4.44/\text{hr}$.
-4. **Council Hourly Grant**: Council commits an hourly top-up (e.g. £4.50/hr).
-5. **Combined Youth Wage**: $\text{Total} = £7.00 + £4.50 = £11.50/\text{hr}$ (Exceeds Real Living Wage).
+3. **Hourly Wage Gap**: $£11.44 - £7.00 = £4.44/\text{hr}$.
+4. **Council Hourly Grant**: e.g., £4.50/hr top-up.
+5. **Combined Youth Wage**: $£7.00 + £4.50 = £11.50/\text{hr}$ (Exceeds Real Living Wage).
 
 ### Grant Commitment Formula
+
 $$\text{Total Grant Allocation} = \text{Hourly Subsidy Rate} \times \text{Max Hours/Week} \times \text{Duration in Weeks}$$
-*Example: £4.50/hr × 16 hrs/wk × 24 weeks = **£1,728.00 ring-fenced grant commitment**.*
+_Example: £4.50/hr × 16 hrs/wk × 24 weeks = **£1,728.00 ring-fenced grant commitment**._
 
 ### Invariant State Machine
-- **Allocation Creation (`POST /councils/allocations`)**:
-  - Atomically decrements `WageSubsidyScheme.remaining_budget`.
-  - Atomically increments `Council.total_budget_spent`.
-  - Transitions `Business.wage_subsidy_status` to `"active_subsidised"`.
-  - Sets allocation `status = "active"`.
-- **Allocation Cancellation (`PATCH /councils/allocations/{id}`)**:
-  - Atomically refunds `allocated_amount` back to `WageSubsidyScheme.remaining_budget`.
-  - Atomically decrements `Council.total_budget_spent`.
-  - If no other active allocations remain for that employer, resets status to `"eligible"`.
+
+- **Allocation Creation (`POST /councils/allocations`)**: Atomically decrements scheme budget, increments council spent total, transitions business status to `"active_subsidised"`.
+- **Allocation Cancellation (`PATCH /councils/allocations/{id}`)**: Atomically refunds unspent commitment back to the scheme budget and restores business eligibility.
 
 ---
 
-## 7. Geospatial & Deprivation Catchment Intelligence
+## 7. Geospatial & Deprivation Intelligence
 
-Springboard integrates spatial data using **WGS84 coordinates (EPSG:4326)** and **Index of Multiple Deprivation (IMD)** ward boundaries.
-
-- **PostgreSQL / PostGIS**: Coordinates are indexed using spatial geo-points: `ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)`.
-- **SQLite Fallback**: Mathematical Haversine formula implemented in Python for cross-platform zero-config standalone mode.
-- **IMD Priority Catchments**: Incorporates ward boundaries (Deciles 1–3) with low-income family percentages (e.g., Chesham Waterside: 38.5% low-income, Decile 2; High Wycombe Central: 44.2% low-income, Decile 1). Businesses located in or near these wards receive an elevated `low_income_catchment_score` (up to 100/100).
-
----
-
-## 8. Core Domain Entity Relationship Diagram
-
-```mermaid
-erDiagram
-    USERS ||--o| YOUTH_PROFILES : "has profile"
-    USERS ||--o| BUSINESSES : "operates"
-    USERS ||--o| COUNCILS : "governs"
-    USERS ||--o{ CONVERSATIONS : "engages in"
-    USERS ||--o{ PENDING_ACTIONS : "authorizes"
-
-    CONVERSATIONS ||--o{ CONVERSATION_MESSAGES : "contains"
-    CONVERSATIONS ||--o{ PENDING_ACTIONS : "triggers"
-
-    YOUTH_PROFILES ||--o{ YOUTH_QUALIFICATIONS : "holds"
-    YOUTH_PROFILES ||--o{ APPLICATIONS : "submits"
-    YOUTH_PROFILES ||--o{ MATCHES : "receives"
-    YOUTH_PROFILES ||--o{ WAGE_SUBSIDY_ALLOCATIONS : "co-funded by"
-
-    BUSINESSES ||--o{ OPPORTUNITIES : "publishes"
-    BUSINESSES ||--o{ WAGE_SUBSIDY_ALLOCATIONS : "awarded"
-
-    COUNCILS ||--o{ WAGE_SUBSIDY_SCHEMES : "funds"
-    COUNCILS ||--o{ WAGE_SUBSIDY_ALLOCATIONS : "commits"
-    WAGE_SUBSIDY_SCHEMES ||--o{ WAGE_SUBSIDY_ALLOCATIONS : "draws from"
-
-    OPPORTUNITIES ||--o{ APPLICATIONS : "receives"
-    OPPORTUNITIES ||--o{ MATCHES : "generates"
-```
+- **Coordinate System**: WGS84 (EPSG:4326).
+- **Spatial Storage**: PostGIS `geometry(Point, 4326)` in PostgreSQL, with automatic mathematical Haversine fallback in SQLite.
+- **OpenStreetMap Cartography**: Standardized on OpenStreetMap tile servers for reliable zero-key deployment.
+- **IMD Deprivation Integration**: Maps UK Index of Multiple Deprivation deciles (Deciles 1–3) with low-income family percentages. Businesses operating in high-deprivation wards receive an elevated priority score for council funding.
 
 ---
 
-## 9. Security, Privacy & UK Safeguarding Standards
+## 8. Vercel Serverless Full-Stack Architecture
 
-1. **Password Security**: Passwords hashed using Argon2 (`ph = PasswordHasher()`). Cleartext passwords are never stored or logged.
-2. **Stateless JWT Authentication**: HMAC-SHA256 signed tokens with 7-day expiration.
-3. **Role-Based Access Control (RBAC)**: Enforced via FastAPI dependencies (`require_role("youth")`, `require_role("business")`, `require_role("council")`).
-4. **Safeguarding & GDPR Compliance**:
-   - Employer search tools (`search_candidates_for_my_opportunity`) return **anonymized summaries only** (first name, general travel distance, education stage, skills).
-   - Private home addresses, phone numbers, and emails are strictly withheld.
-   - Age is never used to rank candidates.
-   - Special category personal data (health, race, religion) is strictly prohibited from collection.
+To enable seamless full-stack deployment on Vercel without multi-container overhead:
+
+1. **`vercel.json`**:
+   - `buildCommand`: `pnpm --filter @springboard/shared-types build && pnpm --filter @springboard/web build`.
+   - `outputDirectory`: `apps/web/dist`.
+   - Rewrites route `/api`, `/api/(.*)`, `/docs`, `/openapi.json`, and `/health` to `/api/index.py`, and all other paths to `/index.html`.
+2. **`api/index.py` ASGI Gateway**:
+   - Dynamically adds `services/api` to `sys.path`.
+   - Mounts the FastAPI application at both `/api` and `/` so all endpoints resolve seamlessly whether request paths preserve or strip the `/api` prefix.
+3. **Database Portability**:
+   - Operates against hosted PostgreSQL via `DATABASE_URL`, or automatically initializes standalone SQLite (`springboard.db`) if no remote database is configured.
+
+---
+
+## 9. Security, Safeguarding & ICO Compliance
+
+1. **Authentication**: Argon2 password hashing + HMAC-SHA256 stateless JWT (7-day TTL).
+2. **Role-Based Access Control**: Strict FastAPI dependencies (`require_role("youth")`, `require_role("business")`, `require_role("council")`).
+3. **GDPR Data Minimization**: Employer candidate searches return anonymized summaries only (first name, distance, skills). Contact details and private addresses are never revealed without explicit candidate application consent.

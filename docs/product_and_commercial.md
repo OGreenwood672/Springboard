@@ -1,7 +1,7 @@
 # Springboard UK — Product & Commercialization Guide
 
 > **The UK's First Conversation-First Social Mobility & Real Living Wage Platform.**  
-> _Connecting young people (14–24), local small businesses, and local councils to bridge the minimum wage affordability gap and build local economic resilience._
+> _Connecting candidates (14–24), local small businesses, and local councils to bridge the minimum wage affordability gap and build local economic resilience._
 
 ---
 
@@ -9,12 +9,12 @@
 
 ### The One-Sentence Pitch:
 
-**Springboard is an agent-driven economic platform that enables local councils to co-fund hourly wages for micro and small businesses, empowering them to hire young people from low-income families at the UK Real Living Wage (£11.44+/hr).**
+**Springboard is an agent-driven economic platform that enables local councils to co-fund hourly wages for micro and small businesses, empowering them to hire young candidates from low-income families at the UK Real Living Wage (£11.44+/hr).**
 
 ### The 30-Second Elevator Pitch:
 
 > _"Across the UK, millions of young people from low-income families are locked out of entry-level jobs, while local high-street businesses desperately need staff but cannot afford the £11.44/hr minimum wage. At the same time, local councils have regeneration funds but struggle to get cash directly to local employers without red tape.  
-> **Springboard solves this trilemma.** Our platform combines conversation-first AI agents, a visual skills knowledge graph, and a geospatial wage subsidy ledger. Small businesses pay what they can afford (e.g. £7.00/hr), councils automatically top up the gap (e.g. £4.50/hr), and young people earn the full Living Wage. Every £1 invested yields **£3.80 in local economic benefit** under HM Treasury Green Book standards."_
+> **Springboard solves this trilemma.** Our platform combines conversation-first AI agents, a visual skills knowledge graph, and a geospatial wage subsidy ledger. Small businesses pay what they can afford (e.g. £7.00/hr), councils automatically top up the gap (e.g. £4.50/hr), and candidates earn the full Living Wage. Every £1 invested yields **£3.80 in local economic benefit** under HM Treasury Green Book standards."_
 
 ---
 
@@ -63,11 +63,11 @@ Post-pandemic youth employment and local high-street vitality in the UK face thr
 
 Springboard creates a self-reinforcing economic flywheel that aligns the incentives of all three stakeholders:
 
-| Stakeholder                              | What They Bring                                         | What They Get                                                                                          | Core Springboard Feature                                             |
-| :--------------------------------------- | :------------------------------------------------------ | :----------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------- |
-| **Young People** _(14–24)_               | Energy, local availability, willingness to learn        | **Real Living Wage pay (£11.44+/hr)**, accredited work experience, confidence, mentorship              | **Job Coach AI (`/coach`)** + **Visual Skills Graph (`/knowledge`)** |
-| **Local Businesses** _(SMEs)_            | Work opportunities, on-the-job training, mentorship     | **Affordable talent (pay only £7.00/hr)**, pre-screened local applicants, zero recruitment agency fees | **Recruiter Assistant AI (`/business/assistant`)**                   |
-| **Local Councils** _(Local Authorities)_ | Ring-fenced wage subsidy funds, social mobility mandate | **Measurable NEET reduction**, high-street economic vitality, real-time spatial audit ledger           | **Spatial Wage Subsidy Command Center (`apps/council`)**             |
+| Stakeholder                              | What They Bring                                         | What They Get                                                                                          | Core Springboard Feature                                                             |
+| :--------------------------------------- | :------------------------------------------------------ | :----------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
+| **Candidates** _(14–24)_                 | Energy, local availability, willingness to learn        | **Real Living Wage pay (£11.44+/hr)**, accredited work experience, confidence, mentorship              | **Candidate Portal (`/coach`, `/matches`)** + **Visual Skills Graph (`/knowledge`)** |
+| **Local Businesses** _(SMEs)_            | Work opportunities, on-the-job training, mentorship     | **Affordable talent (pay only £7.00/hr)**, pre-screened local applicants, zero recruitment agency fees | **Recruiter Assistant AI (`/business/assistant`)**                                   |
+| **Local Councils** _(Local Authorities)_ | Ring-fenced wage subsidy funds, social mobility mandate | **Measurable NEET reduction**, high-street economic vitality, real-time spatial audit ledger           | **Spatial Wage Subsidy Command Center & Map (`/council/map`)**                       |
 
 ---
 
@@ -84,7 +84,7 @@ Springboard creates a self-reinforcing economic flywheel that aligns the incenti
 - Visual exploration of how a young person's existing abilities (e.g. "Customer Service", "Social Media", "Python") connect to local jobs.
 - Dynamic **"Frontier Skills"** expansion reveals adjacent, high-demand skills that unlock higher-paying roles, encouraging continuous personal development.
 
-### 3. Deterministic, Explainable Matching Engine (Zero Hallucinations)
+### 3. Explainable Deterministic Matching & Candidate Agency ("Not Interested")
 
 - Springboard **never** relies on black-box LLM guessing to rank candidates or opportunities.
 - Compatibility is calculated using a deterministic 0–100 mathematical formula factoring:
@@ -94,13 +94,16 @@ Springboard creates a self-reinforcing economic flywheel that aligns the incenti
   - Schedule Availability (10%)
   - Accredited Qualifications (5%)
 - Every recommendation displays a clear factor breakdown, giving candidates actionable advice on how to improve their score.
+- **"Not Interested" Dismissal Mechanism**: Candidates can dismiss unwanted suggestions directly from their Match Matrix widget. Dismissed roles are permanently suppressed and used to refine future recommendation affinity.
 
-### 4. High-Fidelity Geospatial Wage Subsidy Map (Leaflet & OpenStreetMap)
+### 4. Zero-Dependency Geospatial Wage Subsidy Map (OpenStreetMap & AI Scoring)
 
-- Councils view a live cartographic command center with Dark Matter and Positron Light map themes.
-- **Index of Multiple Deprivation (IMD) Overlay**: Deprivation deciles (Deciles 1–3) highlight wards with high concentrations of low-income families and youth populations.
-- Dynamic pulsating pins indicate businesses that are _Active Subsidised_, _Subsidy Eligible_, or _Pledged_, with real-time wage gap tags (`+£4.44/hr gap`).
-- One-click slide-out drawer lets council officers evaluate company affordability and instantly trigger an AI grant assessment.
+- **Zero API Key Requirement**: Standardized on public OpenStreetMap tiles, removing third-party key blockers or quota failures.
+- **Sector-Specific Business Cartography**: Pins display domain-specific icons (Tech, Health, Manufacturing, Retail, Creative, Green, Community) rather than confusing raw numbers.
+- **Non-Blocking Selection Workflow**: Clicking a business pin updates the right-hand **AI Subsidy Scoring & Ranking** panel directly, preserving full map visibility without intrusive modal overlays.
+- **AI Business & Role Viability Appraisal**: Evaluates employer reviews, business health, apprenticeship history, and gives councils a transparent 0–100 funding eligibility score.
+- **Buckinghamshire Ecosystem**: Fully populated with real-world localized businesses (Chesham, Amersham, High Wycombe, Aylesbury, Marlow) and active entry-level vacancies.
+- **Reset View Control**: Convenient button in header top-right aligned with ward filter to immediately recenter the map.
 
 ### 5. Council AI Policy & Grant Director
 
@@ -108,9 +111,15 @@ Springboard creates a self-reinforcing economic flywheel that aligns the incenti
 - Models complex cohort economic forecasts (e.g. _"Model 25 youth placements at £4.50/hr for 16 hrs/wk over 24 weeks"_).
 - Drafts ring-fenced subsidy schemes and commits grant pledges with automated budget deduction and cancellation refund protection.
 
+### 6. Dual-Mode Theming (Light & Dark Mode)
+
+- Persistent user preference stored in `localStorage` (`'springboard_theme'`) with system preference detection.
+- Fast 1-tap toggling via desktop and mobile navigation headers with Sun (`Sun`) and Moon (`Moon`) icons.
+- Ensures accessibility compliance (WCAG AAA contrast in light mode) while preserving the technical cyberpunk dark aesthetic for operational monitoring.
+
 ---
 
-## 6. The Economic Impact Engine: HM Treasury Green Book ROI
+## 5. The Economic Impact Engine: HM Treasury Green Book ROI
 
 ### The £3.80 Social Mobility Multiplier
 
@@ -155,7 +164,7 @@ $$\text{Total Local Economic Benefit} = \text{Total Council Subsidy Invested} \t
 
 ---
 
-## 7. Target Market & Procurement Channels
+## 6. Target Market & Procurement Channels
 
 ### 1. Primary Buyers: UK Local Authorities
 
@@ -173,7 +182,7 @@ Springboard does _not_ require councils to find new capital. It directly operati
 
 ---
 
-## 8. Commercial & Revenue Model
+## 7. Commercial & Revenue Model
 
 Springboard operates a **B2G (Business-to-Government) SaaS and Transactional Grant Fee** model:
 
@@ -200,26 +209,29 @@ Springboard operates a **B2G (Business-to-Government) SaaS and Transactional Gra
 
 ---
 
-## 9. Competitive Landscape: Why Springboard Wins
+## 8. Competitive Landscape: Why Springboard Wins
 
-| Feature                                 |       Springboard UK       | Traditional Job Boards (Indeed / LinkedIn) | Legacy Council Job Portals |
-| :-------------------------------------- | :------------------------: | :----------------------------------------: | :------------------------: |
-| **Living Wage Co-Funding Mechanism**    |  **Yes (£4.50/hr grant)**  |                     No                     |             No             |
-| **Geospatial IMD Deprivation Mapping**  |   **Yes (Deciles 1–3)**    |                     No                     |          Limited           |
-| **AI Conversational Orchestration**     | **Yes (Dual-mode agents)** |              No (Text forms)               |       No (PDF forms)       |
-| **Interactive Skills Knowledge Graph**  | **Yes (`@xyflow/react`)**  |                     No                     |             No             |
-| **Guaranteed Human-in-the-Loop Safety** | **Yes (`PendingAction`)**  |                    N/A                     |      Manual approval       |
-| **Youth Safeguarding & Anonymization**  |  **Yes (ICO compliant)**   |                     No                     |          Partial           |
-| **Treasury Green Book ROI Tracking**    |   **Yes (£3.80x model)**   |                     No                     |             No             |
+| Feature                                    |       Springboard UK       | Traditional Job Boards (Indeed / LinkedIn) | Legacy Council Job Portals |
+| :----------------------------------------- | :------------------------: | :----------------------------------------: | :------------------------: |
+| **Living Wage Co-Funding Mechanism**       |  **Yes (£4.50/hr grant)**  |                     No                     |             No             |
+| **Geospatial IMD Deprivation Mapping**     |   **Yes (Deciles 1–3)**    |                     No                     |          Limited           |
+| **Zero-Key OpenStreetMap Integration**     |   **Yes (Standardized)**   |                    N/A                     |             No             |
+| **AI Conversational Orchestration**        | **Yes (Dual-mode agents)** |              No (Text forms)               |       No (PDF forms)       |
+| **Interactive Skills Knowledge Graph**     | **Yes (`@xyflow/react`)**  |                     No                     |             No             |
+| **Guaranteed Human-in-the-Loop Safety**    | **Yes (`PendingAction`)**  |                    N/A                     |      Manual approval       |
+| **Candidate Negative Preference Curation** | **Yes ("Not Interested")** |                     No                     |             No             |
+| **Youth Safeguarding & Anonymization**     |  **Yes (ICO compliant)**   |                     No                     |          Partial           |
+| **Treasury Green Book ROI Tracking**       |   **Yes (£3.80x model)**   |                     No                     |             No             |
+| **Dual-Mode Theming (Light / Dark)**       |  **Yes (Instant toggle)**  |                  Partial                   |           Rarely           |
 
 ---
 
-## 10. Ready-to-Send Pitch Deck Outline (10 Slides)
+## 9. Ready-to-Send Pitch Deck Outline (10 Slides)
 
 ### Slide 1: Title
 
 - **Springboard**: Bridging the Youth Wage Gap with Spatial AI.
-- _Tagline_: Unlocking the UK Real Living Wage for young people through council-backed SME wage co-funding.
+- _Tagline_: Unlocking the UK Real Living Wage for candidates through council-backed SME wage co-funding.
 
 ### Slide 2: The Problem
 
@@ -227,11 +239,11 @@ Springboard operates a **B2G (Business-to-Government) SaaS and Transactional Gra
 
 ### Slide 3: The Solution
 
-- Springboard: A conversation-first economic platform uniting Youth Candidates, Small Businesses, and Local Councils in a mutually beneficial co-funding model.
+- Springboard: A conversation-first economic platform uniting Candidates, Small Businesses, and Local Councils in a mutually beneficial co-funding model.
 
-### Slide 4: For Young People (14–24)
+### Slide 4: For Candidates (14–24)
 
-- Conversational Job Coach AI, visual skills knowledge graph, guaranteed Real Living Wage pay, and pupil-premium priority matching.
+- Conversational Job Coach AI, visual skills knowledge graph, guaranteed Real Living Wage pay, match curation ("Not Interested"), and pupil-premium priority matching.
 
 ### Slide 5: For Local Small Businesses
 
@@ -239,7 +251,7 @@ Springboard operates a **B2G (Business-to-Government) SaaS and Transactional Gra
 
 ### Slide 6: For Local Authorities (Councils)
 
-- Interactive geospatial map with Index of Multiple Deprivation (IMD) layers, AI Policy Director, automated grant pledge ledger, and full statutory audit compliance.
+- Interactive OpenStreetMap geospatial engine, AI Policy Director, automated grant pledge ledger, employer viability ratings, and full statutory audit compliance.
 
 ### Slide 7: The Economics (HM Treasury Green Book ROI)
 

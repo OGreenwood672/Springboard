@@ -22,7 +22,8 @@
 
     /* Paths */
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@springboard/shared-types": ["../../packages/shared-types/src/index.ts"]
     }
   },
   "include": ["src"],
